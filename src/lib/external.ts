@@ -1,0 +1,232 @@
+import { spawn } from "child_process"
+import { Flag, VideoData } from "./types"
+
+// Variants of youtube domains that might be used
+const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"]
+
+// Non youtube domains that are also supported
+const accepted_domains = [
+    "dailymotion.com",
+    "pony.tube",
+    "vimeo.com",
+    "bilibili.com",
+    "thishorsie.rocks",
+    "tiktok.com",
+    "twitter.com",
+    "x.com",
+    "odysee.com",
+    "newgrounds.com"
+]
+
+async function ytdlp_fetch(url: string) {
+    return new Promise((resolve, reject) => {
+        const cmd = spawn("yt-dlp", [
+            "-q",
+            "--no-download",
+            "--dump-json",
+            "--no-warnings",
+            "--sleep-interval", "2",
+            "--use-extractors",
+                "twitter,Newgrounds,lbry,TikTok,PeerTube,vimeo,BiliBili,dailymotion,Bluesky,generic",
+            url
+        ])
+
+        let response = ""
+
+        cmd.stdout.on('data', (data) => {
+            response += data.toString()
+        });
+
+        cmd.stderr.on('data', (data) => {
+            reject(data)
+        });
+
+        cmd.on('close', (code) => {
+            try {
+                resolve(JSON.parse(response))
+            } catch {
+                reject(`Failed to parse json: ${response}`)
+            }
+        });
+    })
+}
+
+/**
+ * Given a YouTube video URL, extracts the video id from it.
+ * 
+ * Returns None if no video id can be extracted.
+ */
+function extract_video_id(url: URL) {
+    let video_id: any
+
+    let path = url.pathname
+    let query_params = url.searchParams
+
+    // Regular YouTube URL: eg. https://www.youtube.com/watch?v=9RT4lfvVFhA
+    if (path === "/watch")
+        video_id = query_params.get("v")
+    else {
+        let livestream_match = /^\/live\/([a-zA-Z0-9_-]+)/.exec(path)
+        let shortened_match = /^\/([a-zA-Z0-9_-]+)/.exec(path)
+
+        if (livestream_match)
+            // Livestream URL: eg. https://www.youtube.com/live/Q8k4UTf8jiI
+            video_id = livestream_match[1]
+        else if (shortened_match)
+            // Shortened YouTube URL: eg. https://youtu.be/9RT4lfvVFhA
+            video_id = shortened_match[1]
+    }
+
+    return video_id
+}
+
+/**
+ * Given an ISO 8601 duration string, return the length of that duration in seconds.
+ */
+function convert_iso8601_duration_to_seconds(iso8601_duration: string) {
+
+    if (iso8601_duration.startsWith("PT"))
+        iso8601_duration = iso8601_duration.slice(2)
+
+    let total_seconds = 0, hours = 0, minutes = 0, seconds = 0
+
+    if (iso8601_duration.includes("H")) {
+        const [hours_part, remainder] = iso8601_duration.split("H")
+        iso8601_duration = remainder
+        hours = parseInt(hours_part)
+    }
+
+    if (iso8601_duration.includes("M")) {
+        const [minutes_part, remainder] = iso8601_duration.split("M")
+        iso8601_duration = remainder
+        minutes = parseInt(minutes_part)
+    }
+
+    if (iso8601_duration.includes("S")) {
+        const seconds_part = iso8601_duration.replace("S", "")
+        seconds = parseInt(seconds_part)
+    }
+
+    total_seconds = hours * 3600 + minutes * 60 + seconds
+
+    return total_seconds
+}
+
+async function from_youtube(url: URL): Promise<VideoData | Flag> {
+    const video_id = extract_video_id(url)
+
+    if (!video_id)
+        return { type: "ineligible", note: "No video id present" }
+    
+    let video_data: any = false //cache["yt"].get(video_id)
+
+    if (video_data)
+        return video_data
+
+    const id_param = new URLSearchParams({ id: video_id })
+    let response: any = await fetch(`https://www.googleapis.com/youtube/v3/videos?${id_param}&part=snippet,contentDetails&key=${process.env.API_KEY}`)
+    response = await response.json()
+
+    if (!response["items"][0])
+        return { type: "ineligible", note: "Video is not public or unavailable" }
+
+    const response_item = response["items"][0]
+    const snippet = response_item["snippet"]
+    const iso8601_duration = response_item["contentDetails"]["duration"]
+
+    video_data = {
+        "title": snippet["title"],
+        "video_id": video_id,
+        "uploader": snippet["channelTitle"],
+        "upload_date": new Date(snippet["publishedAt"]).getTime(),
+        "duration": convert_iso8601_duration_to_seconds(iso8601_duration),
+        "platform": "YouTube",
+    }
+
+    //_cache["yt"][video_id] = video_data
+    return video_data
+}
+
+/**
+ * Query yt-dlp for the given URL.
+ */
+async function from_other(url: URL): Promise<VideoData | Flag> {
+    let netloc = url.hostname
+    const url_str = url.toString()
+    
+    if (netloc.indexOf(".") != netloc.lastIndexOf("."))
+        netloc = netloc.slice(netloc.indexOf(".") + 1)
+
+    if (!(accepted_domains.includes(netloc)))
+        return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
+    
+    let path_bits = url.pathname.split("/")
+    let video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
+    let video_data: any = undefined//_cache["ytdlp"][netloc].get(video_id)
+
+    if (video_data)
+        return video_data
+
+    let site: any = netloc.split(".")[0]
+
+    let response: any = undefined
+    try {
+        response = await ytdlp_fetch(url_str)
+
+        if ("entries" in response)
+            response = response["entries"][0]
+    } catch (error) {
+        console.log(error)
+        return { type: "ineligible", note: "Could not find a video associated with this link" }
+    }
+
+    /* Some urls might have specific issues that should
+    be handled here before they can be properly processed
+    If yt-dlp gets any updates that resolve any of these issues
+    then the respective case should be updated accordingly */
+    switch (site) {
+        case "twitter":
+        case "x":
+            site = "Twitter"
+            /* This type of url means that the post has more than one video
+            and ytdlp will only successfully retrieve the duration if
+            the video is at index one */
+            if (
+                url_str.slice(0, url_str.lastIndexOf("/")).endsWith("/video") && // TODO revisit logic
+                parseInt(url_str.slice(url_str.lastIndexOf("/") + 1)) != 1
+            )
+                response["duration"] = undefined
+            break
+        case "odysee":
+        case "tiktok":
+            response["uploader"] = response["channel"]
+            break
+        case "bsky":
+            site = "Bluesky"
+            break
+        case "pony":
+            site = "PonyTube"
+            break
+        case "thishorsie":
+            site = "ThisHorsieRocks"
+    }
+
+    const date_str: string = response["upload_date"]
+
+    video_data = {
+        "title": response["title"],
+        "video_id": response["id"],
+        "uploader": response["uploader"],
+        "upload_date": new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`).getTime(),
+        "duration": response["duration"],
+        "platform": site.charAt(0).toUpperCase() + site.slice(1),
+    }
+
+    //_cache["ytdlp"][netloc][video_id] = video_data
+    return video_data
+}
+
+export async function fetch_metadata(url_str: string) {
+    const url = new URL(url_str)
+    return youtube_domains.includes(url.hostname) ? from_youtube(url) : from_other(url)
+}
