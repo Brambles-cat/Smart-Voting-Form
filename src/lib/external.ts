@@ -1,5 +1,5 @@
 import { spawn } from "child_process"
-import { Flag, VideoData } from "./types"
+import { YTDLPItems, Flag, VideoData } from "./types"
 
 // Variants of youtube domains that might be used
 const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"]
@@ -18,7 +18,7 @@ const accepted_domains = [
     "newgrounds.com"
 ]
 
-async function ytdlp_fetch(url: string) {
+async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPItems[] }> {
     return new Promise((resolve, reject) => {
         const cmd = spawn("yt-dlp", [
             "-q",
@@ -28,6 +28,7 @@ async function ytdlp_fetch(url: string) {
             "--sleep-interval", "2",
             "--use-extractors",
                 "twitter,Newgrounds,lbry,TikTok,PeerTube,vimeo,BiliBili,dailymotion,Bluesky,generic",
+            "--cookies", "cookies.txt",
             url
         ])
 
@@ -41,7 +42,7 @@ async function ytdlp_fetch(url: string) {
             reject(data)
         });
 
-        cmd.on('close', (code) => {
+        cmd.on('close', () => {
             try {
                 resolve(JSON.parse(response))
             } catch {
@@ -57,17 +58,17 @@ async function ytdlp_fetch(url: string) {
  * Returns None if no video id can be extracted.
  */
 function extract_video_id(url: URL) {
-    let video_id: any
+    let video_id: string | null = null
 
-    let path = url.pathname
-    let query_params = url.searchParams
+    const path = url.pathname
+    const query_params = url.searchParams
 
     // Regular YouTube URL: eg. https://www.youtube.com/watch?v=9RT4lfvVFhA
     if (path === "/watch")
         video_id = query_params.get("v")
     else {
-        let livestream_match = /^\/live\/([a-zA-Z0-9_-]+)/.exec(path)
-        let shortened_match = /^\/([a-zA-Z0-9_-]+)/.exec(path)
+        const livestream_match = /^\/live\/([a-zA-Z0-9_-]+)/.exec(path)
+        const shortened_match = /^\/([a-zA-Z0-9_-]+)/.exec(path)
 
         if (livestream_match)
             // Livestream URL: eg. https://www.youtube.com/live/Q8k4UTf8jiI
@@ -118,19 +119,19 @@ async function from_youtube(url: URL): Promise<VideoData | Flag> {
     if (!video_id)
         return { type: "ineligible", note: "No video id present" }
     
-    let video_data: any = false //cache["yt"].get(video_id)
+    let video_data: boolean | VideoData = false //cache["yt"].get(video_id)
 
     if (video_data)
         return video_data
 
     const id_param = new URLSearchParams({ id: video_id })
-    let response: any = await fetch(`https://www.googleapis.com/youtube/v3/videos?${id_param}&part=snippet,contentDetails&key=${process.env.API_KEY}`)
-    response = await response.json()
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${id_param}&part=snippet,contentDetails&key=${process.env.API_KEY}`)
+    const response_data = await response.json()
 
-    if (!response["items"][0])
+    if (!response_data["items"][0])
         return { type: "ineligible", note: "Video is not public or unavailable" }
 
-    const response_item = response["items"][0]
+    const response_item = response_data["items"][0]
     const snippet = response_item["snippet"]
     const iso8601_duration = response_item["contentDetails"]["duration"]
 
@@ -160,16 +161,16 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
     if (!(accepted_domains.includes(netloc)))
         return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
     
-    let path_bits = url.pathname.split("/")
-    let video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
-    let video_data: any = undefined//_cache["ytdlp"][netloc].get(video_id)
+    // const path_bits = url.pathname.split("/")
+    // const video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
+    let video_data: VideoData | undefined = undefined//_cache["ytdlp"][netloc].get(video_id)
 
     if (video_data)
         return video_data
 
-    let site: any = netloc.split(".")[0]
+    let site: string = netloc.split(".")[0]
 
-    let response: any = undefined
+    let response = undefined
     try {
         response = await ytdlp_fetch(url_str)
 
