@@ -1,9 +1,11 @@
+import { prisma } from "./prisma"
+
 export type VideoData = {
-    title: string,
+    title: string | null,
     video_id: string,
-    uploader: string,
-    upload_date: number,
-    duration: number | undefined,
+    uploader: string | null,
+    upload_date: Date | null,
+    duration: number | null,
     platform: string
 }
 

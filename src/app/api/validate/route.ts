@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return Response.json({ field_flags: [{ type: "ineligible", note: "No video link provided"}] }, { status: 400 })
 
   const metadata = await fetch_metadata(link)
-  
+
   if ("type" in metadata)
     return Response.json({ field_flags: [metadata] }, { status: 400 })
 

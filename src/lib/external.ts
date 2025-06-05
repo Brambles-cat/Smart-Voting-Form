@@ -1,5 +1,6 @@
 import { spawn } from "child_process"
 import { YTDLPItems, Flag, VideoData } from "./types"
+import { prisma } from "./prisma"
 
 // Variants of youtube domains that might be used
 const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"]
@@ -118,8 +119,8 @@ async function from_youtube(url: URL): Promise<VideoData | Flag> {
 
     if (!video_id)
         return { type: "ineligible", note: "No video id present" }
-    
-    let video_data: boolean | VideoData = false //cache["yt"].get(video_id)
+
+    let video_data: VideoData | null = await prisma.video_metadata.findFirst({ where: { video_id: video_id, platform: "YouTube" } })
 
     if (video_data)
         return video_data
@@ -139,12 +140,12 @@ async function from_youtube(url: URL): Promise<VideoData | Flag> {
         "title": snippet["title"],
         "video_id": video_id,
         "uploader": snippet["channelTitle"],
-        "upload_date": new Date(snippet["publishedAt"]).getTime(),
+        "upload_date": new Date(snippet["publishedAt"]),
         "duration": convert_iso8601_duration_to_seconds(iso8601_duration),
         "platform": "YouTube",
     }
 
-    //_cache["yt"][video_id] = video_data
+    await prisma.video_metadata.create({ data: video_data })
     return video_data
 }
 
@@ -153,7 +154,6 @@ async function from_youtube(url: URL): Promise<VideoData | Flag> {
  */
 async function from_other(url: URL): Promise<VideoData | Flag> {
     let netloc = url.hostname
-    const url_str = url.toString()
     
     if (netloc.indexOf(".") != netloc.lastIndexOf("."))
         netloc = netloc.slice(netloc.indexOf(".") + 1)
@@ -161,15 +161,37 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
     if (!(accepted_domains.includes(netloc)))
         return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
     
-    // const path_bits = url.pathname.split("/")
-    // const video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
-    let video_data: VideoData | undefined = undefined//_cache["ytdlp"][netloc].get(video_id)
+    const path_bits = url.pathname.split("/")
+    const video_id = (path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1))?.toLowerCase()
+
+    if (!video_id)
+        return { type: "ineligible", note: "No video id present" }
+    
+    let site: string = netloc.split(".")[0]
+    site = site[0].toUpperCase() + site.slice(1)
+
+    switch (site) {
+        case "X":
+            site = "Twitter"
+            break
+        case "Bsky":
+            site = "Bluesky"
+            break
+        case "Pony":
+            site = "PonyTube"
+            break
+        case "Thishorsie":
+            site = "ThisHorsieRocks"
+            break
+    }
+
+    console.log(site, video_id)
+    let video_data: VideoData | null = await prisma.video_metadata.findFirst({ where: { video_id: video_id, platform: site } })
 
     if (video_data)
         return video_data
 
-    let site: string = netloc.split(".")[0]
-
+    const url_str = url.toString()
     let response = undefined
     try {
         response = await ytdlp_fetch(url_str)
@@ -186,9 +208,8 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
     If yt-dlp gets any updates that resolve any of these issues
     then the respective case should be updated accordingly */
     switch (site) {
-        case "twitter":
-        case "x":
-            site = "Twitter"
+        case "Twitter":
+        case "X":
             /* This type of url means that the post has more than one video
             and ytdlp will only successfully retrieve the duration if
             the video is at index one */
@@ -198,32 +219,24 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
             )
                 response["duration"] = undefined
             break
-        case "odysee":
-        case "tiktok":
+        case "Odysee":
+        case "Tiktok":
             response["uploader"] = response["channel"]
             break
-        case "bsky":
-            site = "Bluesky"
-            break
-        case "pony":
-            site = "PonyTube"
-            break
-        case "thishorsie":
-            site = "ThisHorsieRocks"
     }
 
     const date_str: string = response["upload_date"]
 
     video_data = {
-        "title": response["title"],
-        "video_id": response["id"],
-        "uploader": response["uploader"],
-        "upload_date": new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`).getTime(),
-        "duration": response["duration"],
+        "title": response["title"] || null,
+        "video_id": video_id,
+        "uploader": response["uploader"] || null,
+        "upload_date": new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`),
+        "duration": response["duration"] || null,
         "platform": site.charAt(0).toUpperCase() + site.slice(1),
     }
 
-    //_cache["ytdlp"][netloc][video_id] = video_data
+    await prisma.video_metadata.create({ data: video_data })
     return video_data
 }
 

@@ -11,7 +11,7 @@ const noSimpingRule = "5b. You can include up to two videos from a creator if th
 
 export default function Home() {
   const [initialFlags, setFlags] = useState(Array(10).fill([]))
-  const [identifiers, setIdentifiers] = useState(Array(10)) // to do: ctrl z doesn't recover identifiers i think  
+  const [identifiers, setIdentifiers] = useState(Array(10).fill(null)) // to do: ctrl z doesn't recover identifiers i think  
   const [inputs, setInputs] = useState(Array(10).fill(""))
   const [warning, setWarning] = useState(false)
   const pasting = useRef(false)
@@ -32,7 +32,7 @@ export default function Home() {
     const isLink = testLink(input)
 
     updateArr(input, setInputs, field_index)
-    updateArr(undefined, setIdentifiers, field_index)
+    updateArr(null, setIdentifiers, field_index)
 
     if (!input)
       updateArr([], setFlags, field_index)
@@ -62,6 +62,7 @@ export default function Home() {
     else if (isLink.length)
       updateArr(isLink, setFlags, field_index)
     else {
+      updateArr(null, setIdentifiers, field_index)
       const { field_flags, vid_identifiers } = await validate(input)
       updateArr(field_flags, setFlags, field_index)
       updateArr(vid_identifiers, setIdentifiers, field_index)
@@ -78,12 +79,11 @@ export default function Home() {
 
     const formData = new FormData(e.currentTarget);
     const data: { [k: string]: FormDataEntryValue } = Object.fromEntries(formData.entries());
-    const values: unknown[] = Object.values(data)
+    let votes: unknown[] = Object.values(data)
 
-    let votes = values.slice(0, 10)
-    votes = votes.filter(val => val != "")
+    votes = votes.filter(vote => vote != "")
     
-    const responses = [...votes, ...Array(10 - votes.length).fill(""), values[10]]
+    const responses = [...votes, ...Array(10 - votes.length).fill("")]
 
     const base = "https://docs.google.com/forms/d/e/1FAIpQLSdVi1gUmI8c2nBnYde7ysN8ZJ79EwI5WSBTbHKqIgC7js0PYg/viewform?usp=pp_url&"
     const params = [
@@ -97,7 +97,6 @@ export default function Home() {
       "entry.543465209=",
       "entry.289193595=",
       "entry.578807278=",
-      "entry.1253504862="
     ]
     
     redirect(`${base}${params.map((key, i) => `${key}${responses[i]}`).join("&")}`)
@@ -109,7 +108,7 @@ export default function Home() {
   const flags: { type: string, note: string }[][] = initialFlags.map(item_flags => { return [...item_flags] })
 
   for (const i in identifiers) {
-    const id_set: { creator: string, video: string } | undefined = identifiers[i]
+    const id_set: { creator: string, video: string } | null = identifiers[i]
 
     if (!id_set)
       continue
@@ -188,30 +187,28 @@ export default function Home() {
               className={styles.input}
               placeholder="Your answer"
             />
-            {(warn || ineligible) && (
-              <div className={styles.info}>
-                <Image src={warn ? "oinfo.svg" : "rinfo.svg"} alt="" width={36} height={36} />
-                <div className={styles.note}>
-                  <ul>
-                    {item_flags.map((flag, i) => <li key={i}>{flag.note}</li>)}
-                  </ul>
-                </div>
-              </div>
+            <div className={styles.info}>
+              {inputs[i] && (
+                identifiers[i] === null && <div className={styles.loading_icon}/> ||
+                (warn || ineligible) && <>
+                  <Image src={warn ? "oinfo.svg" : "rinfo.svg"} alt="" width={36} height={36} />
+                  <div className={styles.note}>
+                    <ul>
+                      {item_flags.map((flag, i) => <li key={i}>{flag.note}</li>)}
+                    </ul>
+                  </div>
+                </> || <Image src={"checkmark.svg"} alt="" width={20} height={20} />
             )}
+            </div>
           </div>
         )})}
         <div className={styles.field}>
-            <label>Contact Email, or Discord name, or Twitter, or Mastodon</label>
-            <div>
-              Feel free to leave this blank, however, <b>including consistent contact info every time you vote helps us to recognize regular voters!</b>&nbsp; It also makes it possible to contact voters if there&apos;s an issue or question. <i>More information and privacy policy can be found here: <a href="https://www.thetop10ponyvideos.com/links-info-credits/privacy-policy">https://www.thetop10ponyvideos.com/links-info-credits/privacy-policy</a></i>
-            </div>
-            <input
-              type="text"
-              name="resp10"
-              className={styles.input}
-              placeholder="Your answer"
-            />
+          <label>Contact Email, or Discord name, or Twitter, or Mastodon</label>
+          <div>
+            Feel free to leave this blank, however, <b>including consistent contact info every time you vote helps us to recognize regular voters!</b>&nbsp; It also makes it possible to contact voters if there&apos;s an issue or question. <i>More information and privacy policy can be found here: <a href="https://www.thetop10ponyvideos.com/links-info-credits/privacy-policy">https://www.thetop10ponyvideos.com/links-info-credits/privacy-policy</a></i>
           </div>
+          <div className={styles.input} style={{ color: "grey", fontSize: 14, pointerEvents: "none" }}>For privacy reasons, only enter contact info on the official form :)</div>
+        </div>
         <button type="submit" value={should_warn ? "warn" : "export" } className={styles.submitButton}>Export Votes</button>
       </form>
     </div>
