@@ -1,5 +1,3 @@
-import { prisma } from "./prisma"
-
 export type VideoData = {
     title: string | null,
     video_id: string,
