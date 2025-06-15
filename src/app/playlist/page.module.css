@@ -1,0 +1,50 @@
+.page {
+    display: flex;
+    padding: 10px;
+    background-color: goldenrod;
+    justify-content: center;
+    gap: 10px;
+}
+
+.editor_field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+    background-color: whitesmoke;
+}
+
+.display {
+    width: 90%;
+    height: 15vw;
+    background-color: lightgray;
+    border-radius: 10px;
+}
+
+.settings_field {
+    padding: 5px;
+    background-color: gray;
+}
+
+.setting
+
+.entry {
+    display: flex;
+    flex-direction: column;
+}
+
+.add_btn {
+    width: 45vw;
+    height: 45px;
+    border: none;
+    background-color: white;
+    outline: 1px solid black;
+}
+
+.video_item {
+    width: 45vw;
+    height: 45px;
+    background-color: white;
+    outline: 1px solid black;
+}

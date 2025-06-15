@@ -1,6 +1,7 @@
 import { spawn } from "child_process"
-import { YTDLPItems, Flag, VideoData } from "./types"
-import { prisma } from "./prisma"
+import { YTDLPItems, Flag, VideoPlatform } from "./types"
+import { getVideoMetadata, saveVideoMetadata } from "./internal"
+import { video_metadata } from "@/generated/prisma"
 
 // Variants of youtube domains that might be used
 const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"]
@@ -114,13 +115,13 @@ function convert_iso8601_duration_to_seconds(iso8601_duration: string) {
     return total_seconds
 }
 
-async function from_youtube(url: URL): Promise<VideoData | Flag> {
+async function from_youtube(url: URL): Promise<video_metadata | Flag> {
     const video_id = extract_video_id(url)
 
     if (!video_id)
         return { type: "ineligible", note: "No video id present" }
 
-    let video_data: VideoData | null = await prisma.video_metadata.findFirst({ where: { video_id: video_id, platform: "YouTube" } })
+    let video_data = await getVideoMetadata(video_id, "YouTube")
 
     if (video_data)
         return video_data
@@ -128,31 +129,33 @@ async function from_youtube(url: URL): Promise<VideoData | Flag> {
     const id_param = new URLSearchParams({ id: video_id })
     const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${id_param}&part=snippet,contentDetails&key=${process.env.API_KEY}`)
     const response_data = await response.json()
+    const response_item = response_data["items"][0]
 
-    if (!response_data["items"][0])
+    if (!response_item)
         return { type: "ineligible", note: "Video is not public or unavailable" }
 
-    const response_item = response_data["items"][0]
     const snippet = response_item["snippet"]
     const iso8601_duration = response_item["contentDetails"]["duration"]
 
     video_data = {
-        "title": snippet["title"],
-        "video_id": video_id,
-        "uploader": snippet["channelTitle"],
-        "upload_date": new Date(snippet["publishedAt"]),
-        "duration": convert_iso8601_duration_to_seconds(iso8601_duration),
-        "platform": "YouTube",
-    }
+        title: snippet["title"],
+        video_id: video_id,
+        thumbnail: snippet.thumbnails.medium.url,
+        uploader: snippet["channelTitle"],
+        uploader_id: snippet["channelId"],
+        upload_date: new Date(snippet["publishedAt"]),
+        duration: convert_iso8601_duration_to_seconds(iso8601_duration),
+        platform: "YouTube",
+    } as video_metadata
 
-    await prisma.video_metadata.create({ data: video_data })
+    saveVideoMetadata(video_data)
     return video_data
 }
 
 /**
  * Query yt-dlp for the given URL.
  */
-async function from_other(url: URL): Promise<VideoData | Flag> {
+async function from_other(url: URL): Promise<video_metadata | Flag> {
     let netloc = url.hostname
     
     if (netloc.indexOf(".") != netloc.lastIndexOf("."))
@@ -160,13 +163,13 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
 
     if (!(accepted_domains.includes(netloc)))
         return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
-    
+
     const path_bits = url.pathname.split("/")
     const video_id = (path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1))?.toLowerCase()
 
     if (!video_id)
         return { type: "ineligible", note: "No video id present" }
-    
+
     let site: string = netloc.split(".")[0]
     site = site[0].toUpperCase() + site.slice(1)
 
@@ -185,8 +188,7 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
             break
     }
 
-    console.log(site, video_id)
-    let video_data: VideoData | null = await prisma.video_metadata.findFirst({ where: { video_id: video_id, platform: site } })
+    let video_data = await getVideoMetadata(video_id, site)
 
     if (video_data)
         return video_data
@@ -210,6 +212,7 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
     switch (site) {
         case "Twitter":
         case "X":
+            response["title"] = `"${response["title"].slice(response["uploader"].length + 3)}"` // unsliced format is: uploader - title
             /* This type of url means that the post has more than one video
             and ytdlp will only successfully retrieve the duration if
             the video is at index one */
@@ -220,27 +223,53 @@ async function from_other(url: URL): Promise<VideoData | Flag> {
                 response["duration"] = undefined
             break
         case "Odysee":
+            response["uploader"] = response["channel"]
+            break
         case "Tiktok":
             response["uploader"] = response["channel"]
+            response["uploader_id"] = `@${response["uploader"]}`
+            break
+        case "Newgrounds":
+            response["uploader_id"] = response["uploader"]
             break
     }
 
     const date_str: string = response["upload_date"]
 
     video_data = {
-        "title": response["title"] || null,
-        "video_id": video_id,
-        "uploader": response["uploader"] || null,
-        "upload_date": new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`),
-        "duration": response["duration"] || null,
-        "platform": site.charAt(0).toUpperCase() + site.slice(1),
-    }
+        title: response["title"],
+        video_id: video_id,
+        thumbnail: response["thumbnail"] || null,
+        uploader: response["uploader"],
+        uploader_id: response["uploader_id"],
+        upload_date: new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`),
+        duration: response["duration"] || null,
+        platform: site.charAt(0).toUpperCase() + site.slice(1),
+    } as video_metadata
 
-    await prisma.video_metadata.create({ data: video_data })
+    saveVideoMetadata(video_data)
     return video_data
 }
 
 export async function fetch_metadata(url_str: string) {
     const url = new URL(url_str)
     return youtube_domains.includes(url.hostname) ? from_youtube(url) : from_other(url)
+}
+
+const platform_bases = {
+    "YouTube": "www.youtube.com/watch?v=_id_",
+    "Dailymotion" : "www.dailymotion.com/video/_id_",
+    "Vimeo" : "vimeo.com/_id_",
+    "ThisHorsieRocks" : "pt.thishorsie.rocks/w/_id_",
+    "PonyTube" : "pony.tube/w/_id_",
+    "Bilibili" : "www.bilibili.com/video/_id_",
+    "Twitter" : "x.com/_uid_/status/_id_",
+    "Bluesky" : "bsky.app/profile/_uid_/post/_id_",
+    "Tiktok" : "www.tiktok.com/_uid_/video/_id_",
+    "Odysee" : "odysee.com/_uid_/_id_",
+    "Newgrounds" : "www.newgrounds.com/portal/view/_id_"
+}
+
+export function getVideoLinks(dataList: video_metadata[]) {
+  return dataList.map(videoData => videoData ? `https://${platform_bases[videoData.platform as VideoPlatform].replace("_id_", videoData.video_id).replace("_uid_", videoData.uploader)}` : "")
 }

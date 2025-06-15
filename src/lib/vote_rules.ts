@@ -1,6 +1,7 @@
-import { Flag, VideoData } from "./types";
+import { video_metadata } from "@/generated/prisma";
+import { Flag } from "./types";
 
-export default function check(video_metadata: VideoData): Flag[] {
+export default function check(video_metadata: video_metadata): Flag[] {
     const flags: Flag[] = []
 
     if (video_metadata.upload_date) {

@@ -128,7 +128,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 10px;
+  padding: 20px 10px 10px 10px;
   background-color: #ffffff;
   border-radius: 10px;
   border: 1px solid #DADCE0;
@@ -201,9 +201,26 @@
   border-bottom: 8px solid rgb(235, 235, 235);
 }
 
+.video_display {
+  display: flex;
+  gap: 10px;
+}
+
+.video_display img {
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.video_origin {
+  position: absolute;
+  font-size: 0.8rem;
+  bottom: -20px;
+  right: 0;
+}
+
 .input {
   padding: 5px;
-  margin: 20px 15px;
+  margin: 20px 15px 10px;
   border: none;
   border-bottom: 2px solid #ccc;
   width: 50%;
