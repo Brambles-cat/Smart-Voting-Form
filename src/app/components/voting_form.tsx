@@ -1,16 +1,17 @@
 "use client"
 
 import { Dispatch, SetStateAction, useRef, useState } from "react";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import styles from "../page.module.css";
 import { APIRemoveRequestBody, APIValidateRequestBody, APIValidateResponseBody, Flag, VideoDataClient } from "@/lib/types";
 import VoteCounter from "./vote_counter";
 import VoteField from "./vote_field";
+import { testLink } from "@/lib/util";
 
 interface InitialProps {
   i_inputs: string[]
   i_flags: Flag[][]
-  i_video_data: (VideoDataClient | null | undefined)[]
+  i_video_data: (VideoDataClient | null)[]
 }
 
 const noSimpingRule = "5b. You can include up to two videos from a creator if the videos are unique and you're including votes for at least five creators total. Don’t vote for multiple parts in a series or very similar videos from the same creator"
@@ -45,6 +46,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
 
     clearTimeout(inputTimeouts.current[field_index])
     clearTimeout(deleteTimeouts.current[field_index])
+
     deleteTimeouts.current[field_index] = setTimeout(() => {
       remove(field_index)
     }, 1000);
@@ -89,7 +91,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     e.preventDefault();
 
     const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement
-    
+
     if (submitter.value === "warn")
       return setWarning(true)
 
@@ -114,8 +116,8 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
       "entry.289193595=",
       "entry.578807278=",
     ]
-    
-    redirect(`${base}${params.map((key, i) => `${key}${responses[i]}`).join("&")}`)
+
+    redirect(`${base}${params.map((key, i) => `${key}${responses[i]}`).join("&")}`, RedirectType.push)
   }
 
   const videos = new Set()
@@ -125,11 +127,11 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
 
   for (const i in videoData) {
     const vid_data = videoData[i]
-    
+
     if (!vid_data)
       continue
 
-    const vid_id = `${vid_data.video_id}-${vid_data.platform}`
+    const vid_id = `${vid_data.id}-${vid_data.platform}`
     const creator_id = `${vid_data.uploader}-${vid_data.platform}`
 
     if (videos.has(vid_id))
@@ -170,7 +172,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
         }
         <div className={styles.headerfield}>
           <label>Test Smort Form #2</label>
-          <div>Features:</div>
+          <div>Feature Goals:</div>
           <ul>
             <li>
               Displays videos on the ballot to make keeping track of what was or wasn&apos;t on there easier when making changes
@@ -188,6 +190,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
               </ul>
             </li>
           </ul>
+          <div>Last Updated: Jun 14</div>
         </div>
         {inputs.map((input, i) =>
           <VoteField
@@ -228,22 +231,15 @@ async function validate(url: string, index: number): Promise<APIValidateResponse
 }
 
 function remove(field_index: number) {
+  const uid = /uid=([^;]+)/.exec(document.cookie)?.[1]
+  if (!uid)
+    return
+
   fetch("/api/remove", {
     method: "POST",
     body: JSON.stringify({
-      index: field_index
+      index: field_index,
+      playlist_id: "ballot"
     } as APIRemoveRequestBody)
   })
-}
-
-/**
- * @returns false if input is not a link, or an array of 0 or 1 flag if the link is or isn't from a supported platform respectively
- */
-function testLink(input: string): false | Flag[] {
-  const valid = /(https?:\/\/)?(\w+\.)?(pony\.tube|youtube\.com|youtu\.be|bilibili\.com|vimeo\.com|thishorsie\.rocks|dailymotion\.com|dai\.ly|tiktok\.com|twitter\.com|x\.com|odysee\.com|newgrounds\.com|bsky\.app)\/?[^\s]{0,500}/
-  const link = /https?:\/\//
-
-  if (valid.test(input)) return []
-  if (link.test(input)) return [{ type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }]
-  return false
 }

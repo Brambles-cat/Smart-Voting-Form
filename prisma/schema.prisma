@@ -18,11 +18,13 @@ model manual_label {
 }
 
 model playlist {
-  playlist_id                   String          @id
-  owner_id                      String?
-  last_accessed                 DateTime?       @db.Date
-  playlist_item                 playlist_item[]
-  user_user_ballot_idToplaylist user[]          @relation("user_ballot_idToplaylist")
+  id            String          @id
+  owner_id      String?
+  last_accessed DateTime?       @db.Date
+  name          String?
+  description   String?
+  thumbnail     String?
+  playlist_item playlist_item[]
 }
 
 model playlist_item {
@@ -30,28 +32,29 @@ model playlist_item {
   video_id       String
   playlist_index Int
   platform       String
-  playlist       playlist @relation(fields: [playlist_id], references: [playlist_id], onDelete: Cascade, onUpdate: NoAction)
+  playlist       playlist       @relation(fields: [playlist_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  video_metadata video_metadata @relation(fields: [video_id, platform], references: [id, platform], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([playlist_id, playlist_index])
 }
 
 model video_metadata {
-  video_id    String
-  thumbnail   String?
-  title       String
-  uploader    String
-  upload_date DateTime? @db.Date
-  duration    Int?
-  platform    String
-  whitelisted Boolean   @default(false)
-  uploader_id String
+  id            String
+  thumbnail     String?
+  title         String
+  uploader      String
+  upload_date   DateTime?       @db.Date
+  duration      Int?
+  platform      String
+  whitelisted   Boolean         @default(false)
+  uploader_id   String
+  playlist_item playlist_item[]
 
-  @@id([video_id, platform])
+  @@id([id, platform])
 }
 
 model user {
-  id                                String   @id
-  ballot_id                         String
-  last_active                       DateTime @db.Date
-  playlist_user_ballot_idToplaylist playlist @relation("user_ballot_idToplaylist", fields: [ballot_id], references: [playlist_id], onDelete: NoAction, onUpdate: NoAction)
+  id          String   @id
+  ballot_id   String?
+  last_active DateTime @db.Date
 }

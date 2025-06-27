@@ -18,7 +18,7 @@ export default function VoteField({ index, fieldInput, fieldFlags, displayData, 
     <div className={`${styles.field} ${warnLevel == 2 && styles.ineligible || warnLevel && styles.warn}`}>
       {displayData &&
         <div className={styles.video_display} style={{position: "relative"}}>
-          <img className={styles.thumbnail} src={displayData.thumbnail || ""} width={160} height={90} alt=""/>
+          <img className={styles.thumbnail} src={displayData.thumbnail || ""} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async"/>
           {displayData.title || ""}
           <div className={styles.video_origin}>By <b>{displayData.uploader}</b> on <b>{displayData.platform}</b></div>
         </div>

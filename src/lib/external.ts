@@ -1,5 +1,5 @@
 import { spawn } from "child_process"
-import { YTDLPItems, Flag, VideoPlatform } from "./types"
+import { YTDLPItems, Flag } from "./types"
 import { getVideoMetadata, saveVideoMetadata } from "./internal"
 import { video_metadata } from "@/generated/prisma"
 
@@ -139,7 +139,7 @@ async function from_youtube(url: URL): Promise<video_metadata | Flag> {
 
     video_data = {
         title: snippet["title"],
-        video_id: video_id,
+        id: video_id,
         thumbnail: snippet.thumbnails.medium.url,
         uploader: snippet["channelTitle"],
         uploader_id: snippet["channelId"],
@@ -148,7 +148,7 @@ async function from_youtube(url: URL): Promise<video_metadata | Flag> {
         platform: "YouTube",
     } as video_metadata
 
-    saveVideoMetadata(video_data)
+    await saveVideoMetadata(video_data)
     return video_data
 }
 
@@ -165,7 +165,7 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
         return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
 
     const path_bits = url.pathname.split("/")
-    const video_id = (path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1))?.toLowerCase()
+    const video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
 
     if (!video_id)
         return { type: "ineligible", note: "No video id present" }
@@ -238,8 +238,8 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
 
     video_data = {
         title: response["title"],
-        video_id: video_id,
-        thumbnail: response["thumbnail"] || null,
+        id: video_id,
+        thumbnail: response["thumbnail"] || "",
         uploader: response["uploader"],
         uploader_id: response["uploader_id"],
         upload_date: new Date(`${date_str.slice(0, 4)}-${date_str.slice(4, 6)}-${date_str.slice(6)}`),
@@ -247,29 +247,11 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
         platform: site.charAt(0).toUpperCase() + site.slice(1),
     } as video_metadata
 
-    saveVideoMetadata(video_data)
+    await saveVideoMetadata(video_data)
     return video_data
 }
 
 export async function fetch_metadata(url_str: string) {
     const url = new URL(url_str)
     return youtube_domains.includes(url.hostname) ? from_youtube(url) : from_other(url)
-}
-
-const platform_bases = {
-    "YouTube": "www.youtube.com/watch?v=_id_",
-    "Dailymotion" : "www.dailymotion.com/video/_id_",
-    "Vimeo" : "vimeo.com/_id_",
-    "ThisHorsieRocks" : "pt.thishorsie.rocks/w/_id_",
-    "PonyTube" : "pony.tube/w/_id_",
-    "Bilibili" : "www.bilibili.com/video/_id_",
-    "Twitter" : "x.com/_uid_/status/_id_",
-    "Bluesky" : "bsky.app/profile/_uid_/post/_id_",
-    "Tiktok" : "www.tiktok.com/_uid_/video/_id_",
-    "Odysee" : "odysee.com/_uid_/_id_",
-    "Newgrounds" : "www.newgrounds.com/portal/view/_id_"
-}
-
-export function getVideoLinks(dataList: video_metadata[]) {
-  return dataList.map(videoData => videoData ? `https://${platform_bases[videoData.platform as VideoPlatform].replace("_id_", videoData.video_id).replace("_uid_", videoData.uploader)}` : "")
 }

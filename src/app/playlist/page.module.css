@@ -1,50 +1,174 @@
-.page {
-    display: flex;
-    padding: 10px;
-    background-color: goldenrod;
-    justify-content: center;
-    gap: 10px;
+.playlistEditor {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  padding: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.editor_field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 40%;
-    background-color: whitesmoke;
+.playlistThumbnail {
+  max-width: 300px;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  object-fit: cover;
 }
 
-.display {
-    width: 90%;
-    height: 15vw;
-    background-color: lightgray;
-    border-radius: 10px;
+.settings {
+  display: flex;
+  flex-direction: column;
+  max-width: 300px;
+  gap: 1rem;
 }
 
-.settings_field {
-    padding: 5px;
-    background-color: gray;
+.playlistName {
+  padding: 0.25rem 0.75rem;
+  outline: none;
+  border: none;
+  border-bottom: 3px solid #cbbba0;
+  font-size: 1.3rem;
+  text-align: center;
+  background-color: #ffefd900;
 }
 
-.setting
-
-.entry {
-    display: flex;
-    flex-direction: column;
+.description {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  height: 5rem;
+  resize: none;
+  outline: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #fff;
 }
 
-.add_btn {
-    width: 45vw;
-    height: 45px;
-    border: none;
-    background-color: white;
-    outline: 1px solid black;
+.addVideoButton,
+.saveButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+  background-color: #eb8500;
+  color: white;
 }
 
-.video_item {
-    width: 45vw;
-    height: 45px;
-    background-color: white;
-    outline: 1px solid black;
+.addVideoButton:hover,
+.saveButton:hover {
+  background-color: #dd5100;
+}
+
+.disabledButton {
+  background-color: lightslategrey;
+}
+
+.disabledButton:hover {
+  background-color: lightslategray;
+  cursor: default;
+}
+
+.playlistArea {
+  display: flex;
+  flex-direction: column;
+  flex: 2;
+  max-width: 65vw;
+}
+
+.addVideoRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.videoLinkInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.playlistEntry {
+  position: relative;
+  display: flex;
+  height: 100px;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  margin-bottom: 1rem;
+  padding-right: 2rem;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.playlistEntry:has(.videoDisplay:hover) {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.videoDisplay {
+  display: flex;
+  text-decoration: none;
+}
+
+.entryThumbnail {
+  width: 180px;
+  max-width: 40%;
+  object-fit: cover;
+  background-color: #cbd5e0;
+  flex-shrink: 0;
+}
+
+.videoDetails {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #2d3748;
+}
+
+.videoTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.creatorField {
+  color: #676767;
+  margin-top: 0.3rem;
+}
+
+.entryOptionsButton {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 2rem;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 0.5rem;
+  z-index: 100;
+  border-radius: 4px;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+  text-align: left;
 }

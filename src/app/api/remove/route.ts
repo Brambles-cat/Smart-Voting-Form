@@ -1,25 +1,36 @@
-import { getBallotItems, removeItem } from "@/lib/internal";
+import { getPlaylist, getUser, removeItem } from "@/lib/internal";
+import { APIRemoveRequestBody } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
     const uid = request.cookies.get("uid")?.value
+    if (!uid) return new NextResponse()
 
-    if (!uid)
-        return NextResponse.json(null)
+    const user = await getUser(uid)
+    if (!user) return new NextResponse(null, { status: 400 })
 
-    const index = (await request.json()).index
+    const body: APIRemoveRequestBody = await request.json()
 
-    if (!index || typeof index !== "number")
-        return NextResponse.json(null, { status: 400 })
+    if (typeof body.index !== "number")
+        return new NextResponse(null, { status: 400 })
 
-    const items = await getBallotItems(uid)
-    const toRemove = items.find(item => item.playlist_index === index)
+    const playlist_id = body.playlist_id === "ballot" ? user.ballot_id! : body.playlist_id
 
-    if (!toRemove)
-        return NextResponse.json("Invalid index", { status: 400 })
+    let items = playlist_id && (await getPlaylist(playlist_id))?.playlist_item
+
+    if (!items)
+        return NextResponse.json("Invalid playlist id", { status: 400 })
+
+    items = items.sort((a, b) => a.playlist_index - b.playlist_index)
+
+    if (!items[body.index])
+        return Response.json("Invalid index", { status: 400 })
 
     let error = null
-    await removeItem(toRemove.playlist_id, toRemove.playlist_index).catch(() => error = "Couldn't remove item")
+    await removeItem(items[body.index], body.index === 0 ? items[1].video_metadata.thumbnail! : undefined).catch(() => error = "Couldn't remove item")
 
-    return NextResponse.json(error, { status: error ? 500 : 200 })
+    if (error)
+        return Response.json(error, { status: 500 })
+    else
+        return new Response
 }
