@@ -1,4 +1,4 @@
-// Code
+// Methods for making specific interactions with the database
 
 import { prisma } from "./prisma";
 import { playlist, user, video_metadata } from "@/generated/prisma";
