@@ -25,6 +25,9 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
   const deleteTimeouts = useRef<NodeJS.Timeout[]>([])
   const pasting = useRef(false)
 
+  /**
+   * Shorthand for updating the array states at a specified index
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateArr = (val: any, setter: Dispatch<SetStateAction<any[]>>, index: number) => {
     setter(old => {
@@ -34,16 +37,28 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     })
   }
 
+  /**
+   * Rerender the page using the results of the validation request
+   * @param input user input, ideally a well formed link from a supported domain
+   * @param field_index used by the server to save the entry's position
+   */
   const applyValidation = async (input: string, field_index: number) => {
     const { field_flags, video_data } = await validate(input, field_index)
     updateArr(field_flags, setInitialFlags, field_index)
     updateArr(video_data || null, setVideoData, field_index)
   }
 
+  /**
+   * Tell the server to forget the entry at the specified index
+   * @param field_index 
+   * @returns 
+   */
   const removeFieldSave = (field_index: number) => {
+    // Assume already not present whien there's no video data
     if (!videoData[field_index])
       return
 
+    // Wait until the user stops editing the entry field to avoid spamming requests
     clearTimeout(inputTimeouts.current[field_index])
     clearTimeout(deleteTimeouts.current[field_index])
 
@@ -52,6 +67,9 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     }, 1000);
   }
 
+  /**
+   * Handler for changes to the ballot entry fields
+   */
   const changed = async (e: React.ChangeEvent<HTMLInputElement>, field_index: number) => {    
     const input = e.currentTarget.value.trim()
     const isLink = testLink(input)
@@ -81,12 +99,18 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
       clearTimeout(inputTimeouts.current[field_index])
       updateArr(undefined, setVideoData, field_index)
       clearTimeout(deleteTimeouts.current[field_index])
-      inputTimeouts.current[field_index] = setTimeout(() => applyValidation(input, field_index), 3000)
+      inputTimeouts.current[field_index] = setTimeout(() => applyValidation(input, field_index), 2500)
     }
   }
 
+  /**
+   * Assuming this would normally be a link, prevent changed() from delaying requests
+   */
   const pasted = () => { pasting.current = true }
 
+  /**
+   * Exports votes to the main form, and shows a warning if there's a chance that < 5 might be ineligible
+   */
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -95,13 +119,8 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     if (submitter.value === "warn")
       return setWarning(true)
 
-    const formData = new FormData(e.currentTarget);
-    const data: { [k: string]: FormDataEntryValue } = Object.fromEntries(formData.entries());
-    let votes: unknown[] = Object.values(data)
-
-    votes = votes.filter(vote => vote != "")
-    
-    const responses = [...votes, ...Array(10 - votes.length).fill("")]
+    let responses = inputs.filter(vote => vote != "")
+    responses = [...responses, ...Array(10 - responses.length).fill("")]
 
     const base = "https://docs.google.com/forms/d/e/1FAIpQLSdVi1gUmI8c2nBnYde7ysN8ZJ79EwI5WSBTbHKqIgC7js0PYg/viewform?usp=pp_url&"
     const params = [
@@ -117,9 +136,16 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
       "entry.578807278=",
     ]
 
-    redirect(`${base}${params.map((key, i) => `${key}${responses[i]}`).join("&")}`, RedirectType.push)
+    redirect(`${base}${params.map((key, i) => {
+      let url = responses[i]
+      if (!url) return key
+
+      url = encodeURIComponent(`${url}${url.split("/").at(-1)!.includes("?") ? "&f=1" : "?f=1"}`) // todo: edge case
+      return `${key}${url}`
+    }).join("&")}`, RedirectType.push)
   }
 
+  // Ballot rules are checked in the client, here
   const videos = new Set()
   const creatorCounts = new Map()
 
@@ -171,26 +197,16 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
           </div>
         }
         <div className={styles.headerfield}>
-          <label>Test Smort Form #2</label>
-          <div>Feature Goals:</div>
-          <ul>
-            <li>
-              Displays videos on the ballot to make keeping track of what was or wasn&apos;t on there easier when making changes
-            </li>
-            <li>
-              Closing the tab, refreshing, or revisitting will not cause inputted votes to reset
-            </li>
-            <li>
-              Playlists
-              <ul>
-                <li>Able to import public YouTube playlists</li>
-                <li>Playlists with {"<"}= 10 videos can be turned into a ballot for validation</li>
-                <li>Ballots can be turned into a playlist</li>
-                <li>Links to playists are shareable</li>
-              </ul>
-            </li>
-          </ul>
-          <div>Last Updated: Jun 14</div>
+          <label>Test Voting Form</label>
+          <p>
+            This form aims to make managing votes easier and to show the eligibility of each entry<br/><br/>
+            Note that only basic checks are done by the form, so be sure the videos&apos; content also aligns with the rules<br/><br/>
+            Note That:<br/>
+            ✅ = Eligible<br/>
+            ⚠️ = Maybe ineligible<br/>
+            ❌ = Ineligible<br/><br/>
+            If you aren&apos;t familiar with the rules or need any reminder, be sure to carefully read the full rules <a href="https://www.thetop10ponyvideos.com/voting-info#h.j2voxvq0owh8" className={styles.link}>here</a>
+          </p>
         </div>
         {inputs.map((input, i) =>
           <VoteField

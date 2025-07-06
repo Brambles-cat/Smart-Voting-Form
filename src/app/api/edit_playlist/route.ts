@@ -1,12 +1,11 @@
 import { edit_playlist, getPlaylist } from '@/lib/internal'
 import { APIEditPlaylistRequestBody } from '@/lib/types'
 import { NextRequest } from 'next/server'
- 
+
+// Route for modifying playlists' names and descriptions
 export async function POST(req: NextRequest) {
   const body: APIEditPlaylistRequestBody = await req.json()
   const uid = req.cookies.get("uid")?.value
-
-  console.log(body)
 
   if (!body.playlist_id || body.playlist_id.startsWith("ballot "))
     return new Response(null, { status: 400 })

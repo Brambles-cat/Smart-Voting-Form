@@ -141,9 +141,10 @@
   margin: 15px 20px;
 }
 
+.headerfield p,
 .headerfield div {
+  max-width: 90%;
  margin-left: 20px;
- font-size: larger;
 }
 
 .headerfield ul {
@@ -274,4 +275,12 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.link {
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }

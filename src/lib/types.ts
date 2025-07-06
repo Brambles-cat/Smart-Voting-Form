@@ -1,3 +1,5 @@
+// Verbatim
+
 import { video_metadata } from "@/generated/prisma"
 
 export type VideoPlatform =
@@ -17,6 +19,11 @@ export type IndexedVideoMetadata = video_metadata & { playlist_index: number }
 
 export type VideoDataClient = Omit<IndexedVideoMetadata, "upload_date" | "duration" | "whitelisted" | "playlist_index"> & { link: string }
 
+/**
+ * Used to signify a videos eligibility status
+ * 
+ * The context these flags are used in determine what their values can be assumed to be
+ */
 export type Flag = {
     type: "ineligible" | "warn" | "eligible"
     note: string

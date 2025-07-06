@@ -2,6 +2,7 @@ import { getPlaylist, getUser, removeItem } from "@/lib/internal";
 import { APIRemoveRequestBody } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 
+// Route for removing entries from ballots or playlists
 export async function POST(request: NextRequest) {
     const uid = request.cookies.get("uid")?.value
     if (!uid) return new NextResponse()

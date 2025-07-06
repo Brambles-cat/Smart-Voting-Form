@@ -1,3 +1,5 @@
+// Methods for extracting video metadata from external sources
+
 import { spawn } from "child_process"
 import { YTDLPItems, Flag } from "./types"
 import { getVideoMetadata, saveVideoMetadata } from "./internal"
@@ -251,6 +253,11 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
     return video_data
 }
 
+/**
+ * Given a video url, fetch metadata from its respective platform if supported
+ * @param url_str a link to a video
+ * @returns A video metadata object if the fetch was successful, or a Flag that details what went wrong
+ */
 export async function fetch_metadata(url_str: string) {
     const url = new URL(url_str)
     return youtube_domains.includes(url.hostname) ? from_youtube(url) : from_other(url)

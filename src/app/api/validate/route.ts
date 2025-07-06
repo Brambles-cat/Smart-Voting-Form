@@ -1,8 +1,10 @@
 import { fetch_metadata } from '@/lib/external'
 import { createBallot, getUser, removeItem, setBallotItem } from '@/lib/internal'
 import { APIValidateRequestBody as APIValidateRequestBody } from '@/lib/types'
+import check from '@/lib/vote_rules'
 import { NextRequest } from 'next/server'
 
+// Route for checking an entry in the ballot against the rules, and saving its position
 export async function POST(req: NextRequest) {
   const body: APIValidateRequestBody = await req.json()
   const uid = req.cookies.get("uid")?.value
@@ -17,12 +19,12 @@ export async function POST(req: NextRequest) {
       return Response.json({ field_flags: [metadata] })
     
     const user = await getUser(uid)
-    
+
     if (!user)
         return Response.json({ field_flags: [metadata] })
 
-      removeItem(user?.ballot_id, body.index).catch(() => {})
-    }
+    removeItem({ playlist_id: user.ballot_id!, playlist_index: body.index }, undefined).catch(() => {})
+    return Response.json({ field_flags: [metadata] })
   }
 
   let ballot_id

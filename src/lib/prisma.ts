@@ -1,3 +1,5 @@
+// A file creating and ensuring only a single connection existing to the database between reloads made when ran using `next dev`
+
 import { PrismaClient } from "@/generated/prisma";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smart Voting Form",
+  title: "Smol's Voting Form",
   description: "",
 };
 

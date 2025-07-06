@@ -1,5 +1,7 @@
+// Code
+
 import { prisma } from "./prisma";
-import { playlist, playlist_item, user, video_metadata } from "@/generated/prisma";
+import { playlist, user, video_metadata } from "@/generated/prisma";
 import { randomUUID } from "crypto";
 
 export async function getUser(uid: string, create = false) {
@@ -62,37 +64,36 @@ export async function saveVideoMetadata(video_data: video_metadata) {
     return prisma.video_metadata.create({ data: video_data }).catch(console.log)
 }
 
-export async function removeItem(playlist_item_data: playlist_item, next_thumbnail: undefined | string) {
+export async function removeItem(playlist_item: { playlist_id: string, playlist_index: number }, next_thumbnail: undefined | string) {
     await prisma.playlist_item.delete({
         where: {
             playlist_id_playlist_index: {
-                playlist_id: playlist_item_data.playlist_id,
-                playlist_index: playlist_item_data.playlist_index
+                playlist_id: playlist_item.playlist_id,
+                playlist_index: playlist_item.playlist_index
             }
         }
     })
 
-    if (!playlist_item_data.playlist_id.startsWith("ballot ")) {
+    if (!playlist_item.playlist_id.startsWith("ballot ")) {
         await prisma.playlist_item.updateMany({
             where: {
-                playlist_id: playlist_item_data.playlist_id,
-                playlist_index: { gt: playlist_item_data.playlist_index }
+                playlist_id: playlist_item.playlist_id,
+                playlist_index: { gt: playlist_item.playlist_index }
             },
             data: {
                 playlist_index: { decrement: 1 }
             }
         })
-        console.log(next_thumbnail)
 
         await prisma.playlist.update({
-            where: { id: playlist_item_data.playlist_id },
+            where: { id: playlist_item.playlist_id },
             data: {
                 ...(next_thumbnail && { thumbnail: next_thumbnail }),
                 playlist_item: {
                     updateMany: {
                         where: {
-                            playlist_id: playlist_item_data.playlist_id,
-                            playlist_index: { gt: playlist_item_data.playlist_index }
+                            playlist_id: playlist_item.playlist_id,
+                            playlist_index: { gt: playlist_item.playlist_index }
                         },
                         data: {
                             playlist_index: { decrement: 1 }

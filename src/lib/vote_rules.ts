@@ -1,6 +1,10 @@
 import { video_metadata } from "@/generated/prisma";
 import { Flag } from "./types";
 
+/**
+ * Checks video metadata against some of the video eligibility rules
+ * @returns A list of flags for any that may apply
+ */
 export default function check(video_metadata: video_metadata): Flag[] {
     const flags: Flag[] = []
 

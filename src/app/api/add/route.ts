@@ -3,7 +3,8 @@ import { addPlaylistItem, getUser } from '@/lib/internal'
 import { APIAddRequestBody } from '@/lib/types'
 import { toClientVideoMetadata } from '@/lib/util'
 import { NextRequest } from 'next/server'
- 
+
+// Route for adding items to regular playlists
 export async function POST(req: NextRequest) {
   const body: APIAddRequestBody = await req.json()
   const uid = req.cookies.get("uid")?.value

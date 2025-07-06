@@ -32,7 +32,6 @@ export default async function PlaylistPage({ searchParams }: any) {
         playlist_index: i.playlist_index})
     ).sort((a, b) => a.playlist_index - b.playlist_index)
   }
-  console.log(description)
 
   return (
     editable && <EditablePlaylist videos={playlist_items} playlistId={id} playlistName={name} playlistDescription={description}/>
