@@ -1,8 +1,9 @@
 // Methods for making specific interactions with the database
 
 import { prisma } from "./prisma";
-import { playlist, user, video_metadata } from "@/generated/prisma";
+import { user, video_metadata } from "@/generated/prisma";
 import { randomUUID } from "crypto";
+import { LabelConfig } from "./types";
 
 export async function getUser(uid: string, create = false) {
     const now = new Date(Date.now())
@@ -42,10 +43,21 @@ export async function getPlaylists(uid: string) {
     })
 }
 
-export function getPlaylist(playlist_id: string) {
-    return prisma.playlist.findUnique({
+export async function getPlaylist(playlist_id: string) {
+    const playlist = await prisma.playlist.findUnique({
         where: { id: playlist_id },
         include: { playlist_item: { include: { video_metadata: true } } }
+    })
+
+    playlist?.playlist_item.sort((a, b) => a.playlist_index - b.playlist_index)
+    return playlist
+}
+
+export function getPlaylistItem(playlist_id: string, playlist_index: number) {
+    return prisma.playlist_item.findUnique({
+        where: {
+            playlist_id_playlist_index: { playlist_id: playlist_id, playlist_index: playlist_index }
+        }
     })
 }
 
@@ -64,7 +76,7 @@ export async function saveVideoMetadata(video_data: video_metadata) {
     return prisma.video_metadata.create({ data: video_data }).catch(console.log)
 }
 
-export async function removeItem(playlist_item: { playlist_id: string, playlist_index: number }, next_thumbnail: undefined | string) {
+export async function removeItem(playlist_item: { playlist_id: string, playlist_index: number }, next_thumbnail?: string) {
     await prisma.playlist_item.delete({
         where: {
             playlist_id_playlist_index: {
@@ -187,9 +199,24 @@ export function addPlaylistItem(uid: string, playlist_id: string, index: number,
     })
 }
 
-export function edit_playlist(playlist: playlist, name: string, description: string) {
+export function editPlaylist(playlist_id: string, owner_id: string, name: string, description: string) {
     return prisma.playlist.update({
-        where: { id: playlist.id },
+        where: { id: playlist_id, owner_id: owner_id },
         data: { name: name, description: description }
     })
+}
+
+export function getLabelConfigs(): Promise<LabelConfig[]> {
+    return prisma.label_config.findMany() as Promise<LabelConfig[]>
+}
+
+export function setLabelConfigs(new_configs: LabelConfig[]) {
+    return prisma.$transaction(
+        new_configs.map(config =>
+            prisma.label_config.update({
+                where: { trigger: config.trigger },
+                data: config
+            })
+        )
+    )
 }

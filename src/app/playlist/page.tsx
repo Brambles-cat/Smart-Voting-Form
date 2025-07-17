@@ -27,10 +27,8 @@ export default async function PlaylistPage({ searchParams }: any) {
     editable = (playlist.owner_id === uid)
 
     playlist_items = playlist.playlist_item.map(
-      i => ({
-        ...toClientVideoMetadata(i.video_metadata),
-        playlist_index: i.playlist_index})
-    ).sort((a, b) => a.playlist_index - b.playlist_index)
+      i => toClientVideoMetadata(i.video_metadata)
+    )
   }
 
   return (

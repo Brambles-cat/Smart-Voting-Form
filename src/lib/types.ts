@@ -29,6 +29,13 @@ export type Flag = {
     note: string
 }
 
+export type LabelConfig = {
+    name: string,
+    type: "ineligible" | "warn" | "eligible",
+    trigger: string
+    details: string,
+}
+
 export type YTDLPItems = {
     channel: string
     thumbnail: string

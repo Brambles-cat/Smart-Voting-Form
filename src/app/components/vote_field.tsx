@@ -37,7 +37,7 @@ export default function VoteField({ index, fieldInput, fieldFlags, displayData, 
           displayData === undefined && <div className={styles.loading_icon}/> ||
 
           warnLevel && <>
-            <Image src={warnLevel === 1 && "oinfo.svg" || "x.svg"} alt="" width={25} height={25} />
+            <Image src={warnLevel === 1 && "warn.svg" || "x.svg"} alt="" width={25} height={25} />
             <div className={styles.note}>
               <ul>
                 {fieldFlags.map((flag, i) => <li key={i}>{flag.note}</li>)}

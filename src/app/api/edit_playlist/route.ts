@@ -1,4 +1,4 @@
-import { edit_playlist, getPlaylist } from '@/lib/internal'
+import { editPlaylist } from '@/lib/internal'
 import { APIEditPlaylistRequestBody } from '@/lib/types'
 import { NextRequest } from 'next/server'
 
@@ -13,14 +13,7 @@ export async function POST(req: NextRequest) {
   if (!uid)
     return new Response(null, { status: 401 })
 
-  const target = await getPlaylist(body.playlist_id)
+  await editPlaylist(body.playlist_id, uid, body.name, body.description).catch(console.log)
 
-  if (!target)
-    return new Response(null, { status: 404})
-  if (target.owner_id !== uid)
-    return new Response(null, { status: 403 })
-
-  await edit_playlist(target, body.name, body.description).catch(console.log)
-
-  return Response.json(null)
+  return new Response()
 }

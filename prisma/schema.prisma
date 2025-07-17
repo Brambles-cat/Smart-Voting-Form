@@ -58,3 +58,10 @@ model user {
   ballot_id   String?
   last_active DateTime @db.Date
 }
+
+model label_config {
+  name    String
+  type    String
+  details String
+  trigger String @id
+}
