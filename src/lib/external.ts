@@ -2,7 +2,7 @@
 
 import { spawn } from "child_process"
 import { YTDLPItems, Flag } from "./types"
-import { getVideoMetadata, saveVideoMetadata } from "./internal"
+import { getVideoMetadata, saveVideoMetadata } from "./database"
 import { video_metadata } from "@/generated/prisma"
 
 // Variants of youtube domains that might be used

@@ -13,7 +13,7 @@ export function setLabels(new_labels: LabelConfig[]) {
     })
 }
 
-export let labels = {
+export const labels = {
     invalid_link:     { name: 'Invalid link',      type: 'ineligible', trigger: 'Non url entry',               details: 'Not a valid link' },
 	duplicate_votes:  { name: 'Duplicate vote',    type: 'ineligible', trigger: 'Duplicate links in ballot',   details: 'Duplicate votes are not eligible' },
 	missing_id:       { name: 'Missing id',        type: 'ineligible', trigger: 'No video id in link',         details: 'No video id present' },

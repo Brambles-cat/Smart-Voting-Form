@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import VoteForm from "./components/voting_form";
-import { getBallotItems, getUser } from "@/lib/internal";
+import { getBallotItems } from "@/lib/database";
 import styles from "./page.module.css"
 import { toClientVideoMetadata } from "@/lib/util";
 import check from "@/lib/vote_rules";
@@ -9,20 +9,11 @@ import { IndexedVideoMetadata } from "@/lib/types";
 export default async function Home() {
   const userCookies = await cookies()
   const uid = userCookies.get("uid")!.value
-  const user = await getUser(uid)
-
-  if (!user)
-    return (
-      <div className={styles.page}>
-        <VoteForm i_inputs={Array(10).fill("")} i_flags={Array(10).fill([])} i_video_data={Array(10).fill(null)}/>
-      </div>
-    )
-
-  const ballotItems = await getBallotItems(user)
+  const ballotItems = await getBallotItems(uid)
 
   const dataItems = ballotItems.map(i => ({
     ...i.video_metadata,
-    playlist_index: i.playlist_index
+    playlist_index: i.index
   }))
 
   const dataList: (IndexedVideoMetadata | null)[] = Array(10).fill(null)

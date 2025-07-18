@@ -1,44 +1,30 @@
 import { fetch_metadata } from '@/lib/external'
-import { createBallot, getUser, removeItem, setBallotItem } from '@/lib/internal'
-import { APIValidateRequestBody as APIValidateRequestBody } from '@/lib/types'
+import { getUser, removeBallotItem, setBallotItem } from '@/lib/database'
 import check from '@/lib/vote_rules'
 import { NextRequest } from 'next/server'
+import { APIValidateRequestBody } from '@/lib/api'
 
 // Route for checking an entry in the ballot against the rules, and saving its position
 export async function POST(req: NextRequest) {
   const body: APIValidateRequestBody = await req.json()
   const uid = req.cookies.get("uid")?.value
 
-  if (!body.link || typeof body.index !== "number" || body.index < 0 || body.index > 9)
+  if (!body.link || typeof body.index !== "number" || body.index > 9 || body.index < 0)
     return new Response(null, { status: 400 })
 
   const metadata = await fetch_metadata(body.link)
+  const user = uid && await getUser(uid, true)
 
   if ("type" in metadata) {
-    if (!uid)
-      return Response.json({ field_flags: [metadata] })
-    
-    const user = await getUser(uid)
-
     if (!user)
-        return Response.json({ field_flags: [metadata] })
+      return Response.json({ field_flags: [metadata] })
 
-    removeItem({ playlist_id: user.ballot_id!, playlist_index: body.index }, undefined).catch(() => {})
+    removeBallotItem(uid, body.index).catch(() => {})
     return Response.json({ field_flags: [metadata] })
   }
 
-  let ballot_id
+  if (user)
+    await setBallotItem(uid, body.index, metadata.id, metadata.platform)
 
-  if (uid) {
-    const user = (await getUser(uid, true))!
-
-    if (!user.ballot_id)
-      ballot_id = (await createBallot(user, body.index, metadata.id, metadata.platform))[0].ballot_id
-    else {
-      await setBallotItem(user.ballot_id, body.index, metadata.id, metadata.platform)
-      ballot_id = user.ballot_id
-    }
-  }
-
-  return Response.json({ field_flags: check(metadata), video_data: metadata, ballot_id: ballot_id })
+  return Response.json({ field_flags: check(metadata), video_data: metadata })
 }

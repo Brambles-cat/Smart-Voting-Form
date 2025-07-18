@@ -1,7 +1,30 @@
 CREATE TABLE "user" (
 	id TEXT PRIMARY KEY,
-	ballot_id TEXT,
 	last_active DATE NOT NULL,
+	last_ballot_update DATE
+);
+
+CREATE TABLE video_metadata (
+	id TEXT,
+	thumbnail TEXT,
+	title TEXT NOT NULL,
+	uploader TEXT NOT NULL,
+	uploader_id TEXT NOT NULL,
+	upload_date DATE,
+	duration INT,
+	platform TEXT NOT NULL,
+	whitelisted BOOL NOT NULL DEFAULT FALSE,
+	PRIMARY KEY (id, platform)
+);
+
+CREATE TABLE ballot_item (
+	user_id TEXT NOT NULL,
+	video_id TEXT NOT NULL,
+	platform TEXT NOT NULL,
+	index INT NOT NULL,
+	PRIMARY KEY (user_id, index),
+	FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE CASCADE,
+	FOREIGN KEY (video_id, platform) REFERENCES video_metadata(id, platform) ON DELETE CASCADE
 );
 
 CREATE TABLE playlist (
@@ -14,26 +37,12 @@ CREATE TABLE playlist (
 );
 
 CREATE TABLE playlist_item (
-	playlist_id TEXT,
+	id SERIAL PRIMARY KEY,
+	playlist_id TEXT NOT NULL,
 	video_id TEXT NOT NULL,
 	platform TEXT NOT NULL,
-	playlist_index INT NOT NULL,
-	PRIMARY KEY (playlist_id, playlist_index),
-	FOREIGN KEY (playlist_id) REFERENCES playlist(playlist_id) ON DELETE CASCADE,
-	FOREIGN KEY (video_id, platform) REFERENCES video_metadata(video_id, platform) ON DELETE CASCADE
-);
-
-CREATE TABLE video_metadata (
-	id TEXT,
-	thumbnail_path TEXT,
-	title TEXT NOT NULL,
-	uploader TEXT NOT NULL,
-	uploader_id TEXT NOT NULL,
-	upload_date DATE,
-	duration INT,
-	platform TEXT NOT NULL,
-	whitelisted BOOL NOT NULL DEFAULT FALSE,
-	PRIMARY KEY (video_id, platform)
+	FOREIGN KEY (playlist_id) REFERENCES playlist(id) ON DELETE CASCADE,
+	FOREIGN KEY (video_id, platform) REFERENCES video_metadata(id, platform) ON DELETE CASCADE
 );
 
 CREATE TABLE label_config (
@@ -41,7 +50,7 @@ CREATE TABLE label_config (
 	type TEXT NOT NULL,
 	details TEXT NOT NULL,
 	trigger TEXT PRIMARY KEY
-)
+);
 
 CREATE TABLE manual_label (
 	video_id TEXT,

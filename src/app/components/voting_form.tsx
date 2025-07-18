@@ -3,10 +3,11 @@
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { redirect, RedirectType } from "next/navigation";
 import styles from "../page.module.css";
-import { APIRemoveRequestBody, APIValidateRequestBody, APIValidateResponseBody, Flag, VideoDataClient } from "@/lib/types";
+import { Flag, VideoDataClient } from "@/lib/types";
 import VoteCounter from "./vote_counter";
 import VoteField from "./vote_field";
 import { testLink } from "@/lib/util";
+import { removeBallotItem, validate } from "@/lib/api";
 
 interface InitialProps {
   i_inputs: string[]
@@ -50,8 +51,6 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
 
   /**
    * Tell the server to forget the entry at the specified index
-   * @param field_index 
-   * @returns 
    */
   const removeFieldSave = (field_index: number) => {
     // Assume already not present whien there's no video data
@@ -63,7 +62,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     clearTimeout(deleteTimeouts.current[field_index])
 
     deleteTimeouts.current[field_index] = setTimeout(() => {
-      remove(field_index)
+      removeBallotItem(field_index)
     }, 1000);
   }
 
@@ -230,32 +229,4 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
       </form>
     </>
   );
-}
-
-// function search() {}
-
-async function validate(url: string, index: number): Promise<APIValidateResponseBody> {
-  const res = await fetch("/api/validate", {
-    method: "POST",
-    body: JSON.stringify({
-      link: url,
-      index: index
-    } as APIValidateRequestBody),
-  })
-
-  return await res.json()
-}
-
-function remove(field_index: number) {
-  const uid = /uid=([^;]+)/.exec(document.cookie)?.[1]
-  if (!uid)
-    return
-
-  fetch("/api/remove", {
-    method: "POST",
-    body: JSON.stringify({
-      index: field_index,
-      playlist_id: "ballot"
-    } as APIRemoveRequestBody)
-  })
 }

@@ -1,4 +1,4 @@
-import { getPlaylist } from "@/lib/internal";
+import { getPlaylist } from "@/lib/database";
 import { cookies } from "next/headers";
 import { VideoDataClient } from "@/lib/types";
 import { toClientVideoMetadata } from "@/lib/util";
@@ -8,9 +8,6 @@ import Playlist from "./components/Playlist";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function PlaylistPage({ searchParams }: any) {
   const list_id: string | undefined = (await searchParams).list
-
-  if (list_id?.startsWith("ballot "))
-    return <div>breh</div>
 
   const playlist = list_id && await getPlaylist(list_id)
   let playlist_items: VideoDataClient[] = []

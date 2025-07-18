@@ -20,22 +20,20 @@ model manual_label {
 model playlist {
   id            String          @id
   owner_id      String?
-  last_accessed DateTime?       @db.Date
+  thumbnail     String?
   name          String?
   description   String?
-  thumbnail     String?
+  last_accessed DateTime?       @db.Date
   playlist_item playlist_item[]
 }
 
 model playlist_item {
+  id             Int            @id @default(autoincrement())
   playlist_id    String
   video_id       String
-  playlist_index Int
   platform       String
   playlist       playlist       @relation(fields: [playlist_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   video_metadata video_metadata @relation(fields: [video_id, platform], references: [id, platform], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([playlist_id, playlist_index])
 }
 
 model video_metadata {
@@ -43,20 +41,22 @@ model video_metadata {
   thumbnail     String?
   title         String
   uploader      String
+  uploader_id   String
   upload_date   DateTime?       @db.Date
   duration      Int?
   platform      String
   whitelisted   Boolean         @default(false)
-  uploader_id   String
+  ballot_item   ballot_item[]
   playlist_item playlist_item[]
 
   @@id([id, platform])
 }
 
 model user {
-  id          String   @id
-  ballot_id   String?
-  last_active DateTime @db.Date
+  id                 String        @id
+  last_active        DateTime      @db.Date
+  last_ballot_update DateTime?     @db.Date
+  ballot_item        ballot_item[]
 }
 
 model label_config {
@@ -64,4 +64,15 @@ model label_config {
   type    String
   details String
   trigger String @id
+}
+
+model ballot_item {
+  user_id        String
+  video_id       String
+  platform       String
+  index          Int
+  user           user           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  video_metadata video_metadata @relation(fields: [video_id, platform], references: [id, platform], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, index])
 }

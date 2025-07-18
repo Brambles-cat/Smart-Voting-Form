@@ -1,4 +1,4 @@
-import { getLabelConfigs } from "@/lib/internal";
+import { getLabelConfigs } from "@/lib/database";
 import ControlPanel from "./components/ControlPanel";
 import { cookies } from "next/headers";
 import { forbidden } from "next/navigation";
@@ -12,5 +12,5 @@ export default async function ControlPanelPage() {
   
   const label_configs = await getLabelConfigs()
 
-  return <ControlPanel labelConfig={label_configs} videoPool0={[]} />
+  return <ControlPanel labelConfigs={label_configs} videoPool0={[]} />
 }

@@ -7,8 +7,8 @@
 * `public`: Directory containing svg icons used in the app
 * `app`: Nextjs directory containing main project files and using the app router
 * `api`: Directory containing api routes accessible via the /api endpoint
-* `[page route]`: Directory containing components (usually client side), css, and page.tsx files (usually server side) used when rendering each page.
-* `lib`: Directory to which the application typically writes out data after processing.
+* `app/[page route]`: Directory containing components (usually client side), css, and page.tsx files (usually server side) used when rendering each page.
+* `lib`: Organized server and client side functionalities often used in multiple files
 * `middleware.ts`: Ensures the page routes have access to the cookies that are attempted to be set on the client.
 
 > `prisma db pull` and `prisma generate` should be used to update schema.prisma and generated code based on the connected database's schema
@@ -23,3 +23,6 @@
 
 /playlists
 - Let's the user create, view, or edit, all of the playlists they own
+
+/control-panel
+- Page where the operator can adjust and test labels, or manually label videos from the video pool

@@ -1,11 +1,13 @@
 "use client"
 
 import styles from "../page.module.css";
-import { APIAddRequestBody, APIAddResponseBody, APIRemoveRequestBody, APIEditPlaylistRequestBody, VideoDataClient } from "@/lib/types";
 import Playlist from "./Playlist";
 import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { testLink } from "@/lib/util";
+import { VideoDataClient } from "@/lib/types";
+import { addPlaylistItem, editPlaylistMeta, removePlaylistItem } from "@/lib/api";
+import { randomUUID } from "crypto";
 
 type Props = {
   videos: VideoDataClient[]
@@ -31,30 +33,20 @@ export default function EditablePlaylist({ videos, playlistName, playlistDescrip
   const unsaved_metadata = descInput !== savedDesc || nameInput !== savedName
 
   const addVideo = async () => {
-    const response = await fetch("/api/add", {
-      method: "POST",
-      body: JSON.stringify({
-        link: linkInput,
-        playlist_id: playlist_id.current,
-        index: entries.length,
-        name: nameInput,
-        description: descInput
-      } as APIAddRequestBody),
-    });
-
-    const body: APIAddResponseBody = await response.json()
+    const pid = playlist_id.current || randomUUID()
+    const body = await addPlaylistItem(linkInput, pid)
 
     setLinkInput("")
 
-    if (!("metadata" in body))
-      return
+    if ("error" in body)
+      return alert(body.error)
 
     if (!entries.length) {
       setSavedDesc(descInput)
       setSavedName(nameInput)
     }
 
-    playlist_id.current = body.playlist_id
+    playlist_id.current = pid
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("list", playlist_id.current);
@@ -66,15 +58,7 @@ export default function EditablePlaylist({ videos, playlistName, playlistDescrip
   };
 
   const removeVideo = async (index: number) => {
-    const response = await fetch("/api/remove", {
-      method: "POST",
-      body: JSON.stringify({
-        index: index,
-        playlist_id: playlist_id.current
-      } as APIRemoveRequestBody)
-    })
-
-    const body = response.status === 200 ? null : await response.json()
+    let body = await removePlaylistItem(playlist_id.current!, index)
 
     if (body)
       return alert(body)
@@ -85,16 +69,9 @@ export default function EditablePlaylist({ videos, playlistName, playlistDescrip
   }
 
   const editPlaylist = async () => {
-    const response = await fetch("/api/edit_playlist", {
-      method: "POST",
-      body: JSON.stringify({
-        name: nameInput,
-        description: descInput,
-        playlist_id: playlist_id.current
-      } as APIEditPlaylistRequestBody)
-    })
+    const success = await editPlaylistMeta(nameInput, descInput, playlist_id.current!)
 
-    if (response.status === 200) {
+    if (success) {
       setSavedName(nameInput)
       setSavedDesc(descInput)
     }

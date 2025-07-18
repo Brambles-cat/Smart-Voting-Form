@@ -11,11 +11,11 @@ import { LabelConfig } from "@/lib/types";
 const tabs = ["Stats", "Labels", "Pool"]
 
 interface Props {
-  labelConfig: LabelConfig[]
+  labelConfigs: LabelConfig[]
   videoPool0: video_metadata[],
 }
 
-export default function ControlPanel({ labelConfig, videoPool0 }: Props) {
+export default function ControlPanel({ labelConfigs, videoPool0 }: Props) {
   const [activeTab, setActiveTab] = useState("Labels")
 
   return (
@@ -34,7 +34,7 @@ export default function ControlPanel({ labelConfig, videoPool0 }: Props) {
 
       {
         activeTab === "Stats" && <StatsTab /> ||
-        activeTab === "Labels" && <LabelsTab /> ||
+        activeTab === "Labels" && <LabelsTab labelConfigs={labelConfigs}/> ||
         activeTab === "Pool" && <VideoPoolTab />
       }
     </div>
