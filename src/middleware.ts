@@ -8,7 +8,9 @@ export default function middleware(request: NextRequest) {
   const resp = NextResponse.next()
 
   if (!uid)
-    resp.cookies.set("uid", crypto.randomUUID())
+    resp.cookies.set("uid", crypto.randomUUID(), {
+      maxAge: 315360000
+    })
 
   return resp
 }

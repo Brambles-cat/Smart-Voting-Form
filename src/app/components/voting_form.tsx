@@ -8,6 +8,7 @@ import VoteCounter from "./vote_counter";
 import VoteField from "./vote_field";
 import { testLink } from "@/lib/util";
 import { removeBallotItem, validate } from "@/lib/api";
+import { labels } from "@/lib/labels";
 
 interface InitialProps {
   i_inputs: string[]
@@ -15,15 +16,13 @@ interface InitialProps {
   i_video_data: (VideoDataClient | null)[]
 }
 
-const noSimpingRule = "5b. You can include up to two videos from a creator if the videos are unique and you're including votes for at least five creators total. Don’t vote for multiple parts in a series or very similar videos from the same creator"
-
-export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialProps) {
+export default function VoteForm({ i_inputs, i_flags, i_video_data }: InitialProps) {
   const [initialFlags, setInitialFlags] = useState(i_flags) // TODO edit maybe too short logic
   const [videoData, setVideoData] = useState(i_video_data)
   const [inputs, setInputs] = useState(i_inputs)
   const [warning, setWarning] = useState(false)
   const inputTimeouts = useRef<NodeJS.Timeout[]>([])
-  const deleteTimeouts = useRef<NodeJS.Timeout[]>([])
+  const deletionTimeouts = useRef<NodeJS.Timeout[]>([])
   const pasting = useRef(false)
 
   /**
@@ -59,9 +58,9 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
 
     // Wait until the user stops editing the entry field to avoid spamming requests
     clearTimeout(inputTimeouts.current[field_index])
-    clearTimeout(deleteTimeouts.current[field_index])
+    clearTimeout(deletionTimeouts.current[field_index])
 
-    deleteTimeouts.current[field_index] = setTimeout(() => {
+    deletionTimeouts.current[field_index] = setTimeout(() => {
       removeBallotItem(field_index)
     }, 1000);
   }
@@ -81,7 +80,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
       removeFieldSave(field_index)
     }
     else if (!isLink) {
-      updateArr([{ type: "ineligible", note: "Not a valid link" } as Flag], setInitialFlags, field_index)
+      updateArr([labels.invalid_link], setInitialFlags, field_index)
       removeFieldSave(field_index)
     }
     else if (isLink.length) {
@@ -91,13 +90,13 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     else if (pasting.current) {
       pasting.current = false
       updateArr(undefined, setVideoData, field_index)
-      clearTimeout(deleteTimeouts.current[field_index])
+      clearTimeout(deletionTimeouts.current[field_index])
       applyValidation(input, field_index)
     }
     else {
       clearTimeout(inputTimeouts.current[field_index])
       updateArr(undefined, setVideoData, field_index)
-      clearTimeout(deleteTimeouts.current[field_index])
+      clearTimeout(deletionTimeouts.current[field_index])
       inputTimeouts.current[field_index] = setTimeout(() => applyValidation(input, field_index), 2500)
     }
   }
@@ -160,7 +159,7 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     const creator_id = `${vid_data.uploader}-${vid_data.platform}`
 
     if (videos.has(vid_id))
-      flags[i].push({ type: "ineligible", note: "Duplicate votes are not eligible" })
+      flags[i].push(labels.duplicate_votes)
     else
       videos.add(vid_id)
 
@@ -168,11 +167,11 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
     creatorCounts.set(creator_id, newCount)
 
     if (newCount > 2)
-      flags[i].push({ type: "ineligible", note: noSimpingRule })
+      flags[i].push(labels.no_simping)
   }
 
   const unique_creators = creatorCounts.size
-  const eligible = flags.filter((item_flags: { type: string, note: string }[], i) => inputs[i] && !item_flags.find(flag => flag.type === "ineligible"))  
+  const eligible = flags.filter((item_flags: Flag[], i) => inputs[i] && !item_flags.find(flag => flag.type === "ineligible"))  
   const eligible_gte5 = eligible.length >= 5
 
   const should_warn = unique_creators < 5 || !eligible_gte5 || eligible.length !== inputs.filter(input => input !== "").length
@@ -198,13 +197,13 @@ export default function VoteForms({ i_inputs, i_flags, i_video_data }: InitialPr
         <div className={styles.headerfield}>
           <label>Test Voting Form</label>
           <p>
-            This form aims to make managing votes easier and to show the eligibility of each entry<br/><br/>
-            Note that only basic checks are done by the form, so be sure the videos&apos; content also aligns with the rules<br/><br/>
-            Note That:<br/>
+            This form aims to make managing and submitting votes easier. This is done by showing video details with each vote and checking their eligibility in advance.<br/><br/>
+            Note that only basic checks are done by the form, so be sure the videos&apos; content also aligns with the rules.<br/><br/>
+            Symbol Meanings:<br/>
             ✅ = Eligible<br/>
             ⚠️ = Maybe ineligible<br/>
             ❌ = Ineligible<br/><br/>
-            If you aren&apos;t familiar with the rules or need any reminder, be sure to carefully read the full rules <a href="https://www.thetop10ponyvideos.com/voting-info#h.j2voxvq0owh8" className={styles.link}>here</a>
+            If you aren&apos;t familiar with the rules or need any reminder, be sure to carefully read the full rules <a href="https://www.thetop10ponyvideos.com/voting-info#h.j2voxvq0owh8" className={styles.link}>here</a>.
           </p>
         </div>
         {inputs.map((input, i) =>

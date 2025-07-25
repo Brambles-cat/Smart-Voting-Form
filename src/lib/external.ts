@@ -4,6 +4,7 @@ import { spawn } from "child_process"
 import { YTDLPItems, Flag } from "./types"
 import { getVideoMetadata, saveVideoMetadata } from "./database"
 import { video_metadata } from "@/generated/prisma"
+import { labels } from "./labels"
 
 // Variants of youtube domains that might be used
 const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "youtu.be"]
@@ -121,7 +122,7 @@ async function from_youtube(url: URL): Promise<video_metadata | Flag> {
     const video_id = extract_video_id(url)
 
     if (!video_id)
-        return { type: "ineligible", note: "No video id present" }
+        return labels.missing_id
 
     let video_data = await getVideoMetadata(video_id, "YouTube")
 
@@ -134,7 +135,7 @@ async function from_youtube(url: URL): Promise<video_metadata | Flag> {
     const response_item = response_data["items"][0]
 
     if (!response_item)
-        return { type: "ineligible", note: "Video is not public or unavailable" }
+        return labels.unavailable
 
     const snippet = response_item["snippet"]
     const iso8601_duration = response_item["contentDetails"]["duration"]
@@ -164,13 +165,13 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
         netloc = netloc.slice(netloc.indexOf(".") + 1)
 
     if (!(accepted_domains.includes(netloc)))
-        return { type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }
+        return labels.unsupported_site
 
     const path_bits = url.pathname.split("/")
     const video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
 
     if (!video_id)
-        return { type: "ineligible", note: "No video id present" }
+        return labels.missing_id
 
     let site: string = netloc.split(".")[0]
     site = site[0].toUpperCase() + site.slice(1)
@@ -204,7 +205,7 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
             response = response["entries"][0]
     } catch (error) {
         console.log(error)
-        return { type: "ineligible", note: "Could not find a video associated with this link" }
+        return labels.unavailable
     }
 
     /* Some urls might have specific issues that should

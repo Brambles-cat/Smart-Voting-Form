@@ -120,22 +120,6 @@
   transition: background-color 1s;
 }
 
-.field {
-  width: 6.5in;
-  max-width: 85vw;
-  min-height: 95px;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 20px 10px 10px 10px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #DADCE0;
-  transition: background-color 1s;
-  position: relative;
-}
-
 .headerfield label {
   font-size: xx-large;
   margin: 15px 20px;
@@ -150,6 +134,22 @@
 .headerfield ul {
   line-height: 1.5rem;
   max-width: 450px;
+}
+
+.field {
+  width: 6.5in;
+  max-width: 85vw;
+  min-height: 95px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px 10px 10px 10px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #DADCE0;
+  transition: background-color 1s;
+  position: relative;
 }
 
 .field label {

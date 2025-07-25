@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const metadata = await fetch_metadata(body.link)
 
   if ("type" in metadata)
-    return Response.json({ error: metadata.note })
+    return Response.json({ error: metadata.details })
 
   if (!uid)
     return new Response()

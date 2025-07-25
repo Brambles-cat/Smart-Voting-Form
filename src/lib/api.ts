@@ -1,30 +1,30 @@
 // API request/response types and client side functions to make api calls to the server
 
-import { video_metadata } from "@/generated/prisma"
 import { Flag, VideoDataClient } from "./types"
 
 export type APIValidateRequestBody = {
     link: string
-    index: number
+    index?: number
 }
 
 export type APIValidateResponseBody = {
     field_flags: Flag[]
-    video_data?: video_metadata
+    video_data?: VideoDataClient
 }
 
 /**
  * Check the eligibility of a video given its url and keep track of its entry position
  * @param link video url
- * @param index ballot index to save the link at
+ * @param index ballot index to save the link at. can be omitted for the server not to save the ballot entry
  * @returns An array of eligibility flags, and, if present, video metadata associated with the link
  */
-export async function validate(link: string, index: number): Promise<APIValidateResponseBody> {
+export async function validate(link: string, index?: number): Promise<APIValidateResponseBody> {
     const body: APIValidateRequestBody = { link, index }
 
     const res = await fetch("/api/validate", {
         method: "POST",
         body: JSON.stringify(body),
+        credentials: index === undefined ? "omit" : "same-origin"
     })
 
     return await res.json()

@@ -40,7 +40,7 @@ export default function VoteField({ index, fieldInput, fieldFlags, displayData, 
             <Image src={warnLevel === 1 && "warn.svg" || "x.svg"} alt="" width={25} height={25} />
             <div className={styles.note}>
               <ul>
-                {fieldFlags.map((flag, i) => <li key={i}>{flag.note}</li>)}
+                {fieldFlags.map((flag, i) => <li key={i}>{flag.details}</li>)}
               </ul>
             </div>
           </> ||

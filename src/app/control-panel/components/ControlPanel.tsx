@@ -6,12 +6,12 @@ import StatsTab from "./StatsTab";
 import VideoPoolTab from "./VideoPoolTab";
 import styles from "../page.module.css"
 import { video_metadata } from "@/generated/prisma";
-import { LabelConfig } from "@/lib/types";
+import { Flag } from "@/lib/types";
 
 const tabs = ["Stats", "Labels", "Pool"]
 
 interface Props {
-  labelConfigs: LabelConfig[]
+  labelConfigs: Flag[]
   videoPool0: video_metadata[],
 }
 
@@ -34,7 +34,7 @@ export default function ControlPanel({ labelConfigs, videoPool0 }: Props) {
 
       {
         activeTab === "Stats" && <StatsTab /> ||
-        activeTab === "Labels" && <LabelsTab labelConfigs={labelConfigs}/> ||
+        activeTab === "Labels" && <LabelsTab labelSettings={labelConfigs}/> ||
         activeTab === "Pool" && <VideoPoolTab />
       }
     </div>

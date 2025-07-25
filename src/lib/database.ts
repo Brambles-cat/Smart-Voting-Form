@@ -2,7 +2,7 @@
 
 import { prisma } from "./prisma";
 import { video_metadata } from "@/generated/prisma";
-import { LabelConfig } from "./types";
+import { Flag } from "./types";
 
 export async function getUser(uid: string, create = false) {
     const now = new Date(Date.now())
@@ -143,11 +143,11 @@ export function editPlaylist(playlist_id: string, owner_id: string, name: string
     })
 }
 
-export function getLabelConfigs(): Promise<LabelConfig[]> {
-    return prisma.label_config.findMany() as Promise<LabelConfig[]>
+export function getLabelConfigs(): Promise<Flag[]> {
+    return prisma.label_config.findMany() as Promise<Flag[]>
 }
 
-export function setLabelConfigs(new_configs: LabelConfig[]) {
+export function setLabelConfigs(new_configs: Flag[]) {
     return prisma.$transaction(
         new_configs.map(config =>
             prisma.label_config.update({

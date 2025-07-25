@@ -10,7 +10,7 @@ CREATE TABLE video_metadata (
 	title TEXT NOT NULL,
 	uploader TEXT NOT NULL,
 	uploader_id TEXT NOT NULL,
-	upload_date DATE,
+	upload_date DATE NOT NULL,
 	duration INT,
 	platform TEXT NOT NULL,
 	whitelisted BOOL NOT NULL DEFAULT FALSE,

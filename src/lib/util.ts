@@ -2,6 +2,7 @@
 
 import { video_metadata } from "@/generated/prisma";
 import { Flag, VideoDataClient, VideoPlatform } from "./types";
+import { labels } from "./labels";
 
 const platform_bases = {
     "YouTube": "www.youtube.com/watch?v=_id_",
@@ -46,6 +47,6 @@ export function testLink(input: string): false | Flag[] {
   const link = /https?:\/\//;
 
   if (valid.test(input)) return [];
-  if (link.test(input)) return [{ type: "ineligible", note: "1c. Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time" }];
+  if (link.test(input)) return [labels.unsupported_site];
   return false;
 }

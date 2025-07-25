@@ -42,7 +42,7 @@ model video_metadata {
   title         String
   uploader      String
   uploader_id   String
-  upload_date   DateTime?       @db.Date
+  upload_date   DateTime        @db.Date
   duration      Int?
   platform      String
   whitelisted   Boolean         @default(false)
