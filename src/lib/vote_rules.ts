@@ -51,8 +51,8 @@ export function video_check(video_metadata: video_metadata): Flag[] {
  * @returns The number of unique creators found, eligible entries, and all entries with ballot flags included
  */
 export function ballot_check(entries: BallotEntryField[]) {
-  const uniqueVids = new Set()
-  const creatorCounts = new Map()
+  const uniqueVids = new Set<string>()
+  const creatorCounts = new Map<string, number>()
   const entryCopies = entries.map(e => ({ ...e, flags: [...e.flags] })) // Shallow-ish copy to avoid accumulating the same flags in entries
 
   for (const entry of entryCopies) {
@@ -67,16 +67,28 @@ export function ballot_check(entries: BallotEntryField[]) {
     else
       uniqueVids.add(vid_id)
 
+    // Don't count creators from ineligible votes since some otherwise eligible votes may be flagged
+    if (entry.flags.some(f => f.type === "ineligible"))
+      continue
+
     const newCount = (creatorCounts.get(entry.videoData.uploader) || 0) + 1
     creatorCounts.set(creator_id, newCount)
+  }
 
-    if (newCount > 2)
+  for (const entry of entryCopies) {
+    if (!entry.videoData)
+      continue
+
+    const creator_id = `${entry.videoData.uploader}-${entry.videoData.platform}`
+    const instances = creatorCounts.get(creator_id)!
+
+    if (instances > 2 || instances === 2 && creatorCounts.size < 5)
       entry.flags.push(labels.no_simping)
   }
 
   return {
-    uniqueCreators: creatorCounts.size, // TODO, option to count creator from flagged or not in /control-panel
-    eligible: entryCopies.filter(entry => entry.input && !entry.flags.find(flag => flag.type === "ineligible")),
+    uniqueCreators: creatorCounts.size,
+    eligible: entryCopies.filter(entry => entry.input && !entry.flags.some(f => f.type === "ineligible")),
     checkedEntries: entryCopies
   }
 }

@@ -35,7 +35,7 @@ export default function Playlists({ playlists }: Props) {
             <div className={styles.card_content}>
               <div className={styles.playlist_header}> 
                 <h3 className={styles.playlist_title}>{playlist.name}</h3> 
-                <img className={styles.thumbnail} src={playlist.thumbnail!} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async"/>
+                <img className={styles.thumbnail} src={playlist.thumbnail!} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async" referrerPolicy="no-referrer"/>
               </div>
               <p className={styles.playlist_description}>{playlist.description}</p>
             </div>

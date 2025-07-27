@@ -85,6 +85,7 @@ export default function EditablePlaylist({ videos, playlistName, playlistDescrip
             src={entries[0].thumbnail}
             className={styles.playlistThumbnail}
             alt=""
+            referrerPolicy="no-referrer"
           />
         )}
         <div className={styles.settings}>

@@ -5,22 +5,22 @@ import styles from "../page.module.css";
 import Image from "next/image";
 import VoteField from "@/app/components/vote_field";
 import { testLink } from "@/lib/util";
-import { label_config } from "@/generated/prisma";
-import { validate } from "@/lib/api";
-import { BallotEntryField } from "@/lib/types";
+import { updateLabels, validate } from "@/lib/api";
+import { BallotEntryField, Flag } from "@/lib/types";
 import { iconMap, labels } from "@/lib/labels";
 import { ballot_check } from "@/lib/vote_rules";
 
 interface Props {
-  labelSettings: label_config[]
+  labelSettings: Flag[]
 }
 
 export default function LabelsTab({ labelSettings }: Props) {
   const [voteFields, setVoteFields] = useState<BallotEntryField[]>([{ flags: [], videoData: null, input: "" }])
   const [labelsConfigs, setLabels] = useState(labelSettings)
   const inputTimeouts = useRef<NodeJS.Timeout[]>([])
+  const pasting = useRef(false)
 
-  const labelChange = (index: number, newVals: Partial<label_config>) => {
+  const labelChange = (index: number, newVals: Partial<Flag>) => {
     const updated = [...labelsConfigs]
     updated[index] = { ...updated[index], ...newVals }
     setLabels(updated)
@@ -44,20 +44,50 @@ export default function LabelsTab({ labelSettings }: Props) {
     const input = e.currentTarget.value.trim()
     const isLink = testLink(input)
 
+    clearTimeout(inputTimeouts.current[field_index])
+
     if (!input)
       updateField(field_index, { input, videoData: null, flags: [] })
     else if (!isLink)
       updateField(field_index, { input, videoData: null, flags: [labels.invalid_link] })
     else if (isLink.length)
       updateField(field_index, { input, videoData: null, flags: isLink })
+    else if (pasting.current) {
+      pasting.current = false
+      updateField(field_index, { input, videoData: undefined })
+      applyValidation(input, field_index)
+    }
     else {
-      clearTimeout(inputTimeouts.current[field_index])
       updateField(field_index, { input, videoData: undefined, flags: [] })
       inputTimeouts.current[field_index] = setTimeout(() => applyValidation(input, field_index), 2500)
     }
   }
 
-  const { checkedEntries } = ballot_check(voteFields)
+  const pasted = () => { pasting.current = true }
+
+  const saveChanges = async () => {
+    await updateLabels(labelsConfigs)
+  }
+
+  const newLabelMap = new Map<string, Flag>(labelSettings.map(s => [s.trigger, s]))
+  const activeLabels = new Map<string, string>()
+  let { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields)
+
+  if (eligible.length < 5)
+    activeLabels.set(labels.too_few_votes.trigger, newLabelMap.get(labels.too_few_votes.trigger)!.details)
+  else if (uniqueCreators < 5)
+    activeLabels.set(labels.diversity_rule.trigger, newLabelMap.get(labels.diversity_rule.trigger)!.details)
+
+  // Apply label configuration fields (desc for now) for previewing
+  checkedEntries = checkedEntries.map(e => (
+    {
+      ...e,
+      flags: e.flags.map(f => {
+        activeLabels.set(f.trigger, newLabelMap.get(f.trigger)?.details || f.details)
+        return newLabelMap.get(f.trigger) || f 
+      })
+    }
+  ))
 
   return (
     <div className={styles.tabContents}>
@@ -68,7 +98,7 @@ export default function LabelsTab({ labelSettings }: Props) {
             index={i}
             voteData={field}
             onChanged={changed}
-            onPaste={() => {}}
+            onPaste={pasted}
           />
         )}
       </div>
@@ -84,7 +114,7 @@ export default function LabelsTab({ labelSettings }: Props) {
 
       <div className={styles.labelSettingsContainer}>
         {labelsConfigs.map((labelConfig, index) => (
-          <div key={index} className={`${styles.labelSettings} ${checkedEntries.find(f => f.flags.find(fl => labelConfig.trigger === fl.trigger)) && styles.activeLabel}`}>
+          <div key={index} className={`${styles.labelSettings} ${activeLabels.has(labelConfig.trigger) && styles.activeLabel}`}>
             <div className={styles.hoverInfo}>
               <div className={styles.triggeredBy}>Triggered by: {labelConfig.trigger}</div>
             </div>
@@ -108,7 +138,10 @@ export default function LabelsTab({ labelSettings }: Props) {
 
               <button
                 className={styles.iconButton}
-                onClick={() => labelChange(index, { type: labelsConfigs[index].type === "x" ? "warn" : "x"})}
+                onClick={() => {
+                  const t = labelsConfigs[index].type // TODO, turn this into an enum
+                  labelChange(index, { type: t === "ineligible" && "warn" || t === "warn" && "disabled" || "ineligible"})
+                }}
               >
                 <Image
                   src={`${iconMap[labelConfig.type as keyof typeof iconMap]}.svg`}
@@ -122,7 +155,7 @@ export default function LabelsTab({ labelSettings }: Props) {
         ))}
       </div>
 
-      <button className={styles.saveButton}>Save</button>
+      <button className={styles.saveButton} onClick={saveChanges}>Save</button>
     </div>
-  );
+  )
 }

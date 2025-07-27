@@ -11,13 +11,13 @@ interface Props {
 }
 
 export default function PlaylistItem({ data, onRemove, index }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const optionsElement = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false)
+  const optionsElement = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (optionsElement.current && !optionsElement.current.contains(event.target as Node)) {
-        setMenuOpen(false);
+        setMenuOpen(false)
       }
     }
 
@@ -28,7 +28,7 @@ export default function PlaylistItem({ data, onRemove, index }: Props) {
   return (
     <div className={styles.playlistEntry}>
       <a href={data.link} className={styles.videoDisplay} target="_blank" rel="noopener noreferrer">
-        <img src={data.thumbnail || ""} className={styles.entryThumbnail} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async"/>
+        <img src={data.thumbnail || ""} className={styles.entryThumbnail} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async" referrerPolicy="no-referrer"/>
         <div className={styles.videoDetails}>
           <h3 className={styles.videoTitle}>{data.title}</h3>
           <p className={styles.creatorField}>{data.uploader}</p>
@@ -45,5 +45,5 @@ export default function PlaylistItem({ data, onRemove, index }: Props) {
         </>}
       </div>
     </div>
-  );
+  )
 }

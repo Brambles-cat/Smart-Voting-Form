@@ -24,7 +24,7 @@ export type VideoDataClient = Omit<video_metadata, "upload_date" | "duration" | 
  */
 export type Flag = {
     name: string
-    type: "ineligible" | "warn" | "eligible"
+    type: "ineligible" | "warn" | "eligible" | "disabled"
     details: string
     trigger: string
 }

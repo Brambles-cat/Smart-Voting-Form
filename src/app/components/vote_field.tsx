@@ -10,13 +10,13 @@ interface Props {
 }
 
 export default function VoteField({ index, voteData, onChanged, onPaste }: Props) {
-  const warnLevel = voteData.flags.find(flag => flag.type === "ineligible") && 2 || voteData.flags.find(flag => flag.type === "warn") && 1 || 0
+  const warnLevel = voteData.flags.some(f => f.type === "ineligible") && 2 || voteData.flags.some(f => f.type === "warn") && 1 || 0
 
   return (
     <div className={`${styles.field} ${warnLevel == 2 && styles.ineligible || warnLevel && styles.warn}`}>
       {voteData.videoData &&
         <div className={styles.video_display} style={{position: "relative"}}>
-          <img className={styles.thumbnail} src={voteData.videoData.thumbnail || ""} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async"/>
+          <img className={styles.thumbnail} src={voteData.videoData.thumbnail || ""} width={160} height={90} alt="" fetchPriority="low" loading="lazy" decoding="async" referrerPolicy="no-referrer"/>
           {voteData.videoData.title || ""}
           <div className={styles.video_origin}>By <b>{voteData.videoData.uploader}</b> on <b>{voteData.videoData.platform}</b></div>
         </div>

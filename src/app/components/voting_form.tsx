@@ -64,6 +64,8 @@ export default function VoteForm({ initial_entries }: Props) {
     const input = e.currentTarget.value.trim()
     const isLink = testLink(input)
 
+    clearTimeout(inputTimeouts.current[field_index])
+
     if (!input) {
       updateField(field_index, { input, videoData: null, flags: [] })
       removeFieldSave(field_index)
@@ -83,7 +85,6 @@ export default function VoteForm({ initial_entries }: Props) {
       applyValidation(input, field_index)
     }
     else {
-      clearTimeout(inputTimeouts.current[field_index])
       updateField(field_index, { input, videoData: undefined })
       clearTimeout(deletionTimeouts.current[field_index])
       inputTimeouts.current[field_index] = setTimeout(() => applyValidation(input, field_index), 2500)

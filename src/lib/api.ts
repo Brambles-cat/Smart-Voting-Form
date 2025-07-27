@@ -136,7 +136,7 @@ export type APILabelUpdateRequestBody = {
 
 /**
  * Update the label details shown in ballot entries when videos have these labels
- * @param label_updates New label data to replace corresponding existing ones
+ * @param label_updates New label data to replace corresponding existing ones. Should never contain manual labels
  */
 export async function updateLabels(label_updates: Flag[]) {
     const body: APILabelUpdateRequestBody = { label_updates }
