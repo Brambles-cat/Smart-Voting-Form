@@ -3,9 +3,9 @@ import VoteForm from "./components/voting_form";
 import { getBallotItems } from "@/lib/database";
 import styles from "./page.module.css"
 import { toClientVideoMetadata } from "@/lib/util";
-import check from "@/lib/vote_rules";
-import { IndexedVideoMetadata } from "@/lib/types";
+import { video_check } from "@/lib/vote_rules";
 
+// Initialize entries to be shown if the user had previously made any in their ballot
 export default async function Home() {
   const userCookies = await cookies()
   const uid = userCookies.get("uid")!.value
@@ -13,24 +13,25 @@ export default async function Home() {
 
   const dataItems = ballotItems.map(i => ({
     ...i.video_metadata,
-    playlist_index: i.index
+    ballot_index: i.index
   }))
 
-  const dataList: (IndexedVideoMetadata | null)[] = Array(10).fill(null)
-  dataItems.forEach(i => dataList[i.playlist_index] = i)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const initial_entries: any[] = Array.from({ length: 10 }, () => ({ flags: [], videoData: null, input: "" }))
+  dataItems.forEach(item => initial_entries[item.ballot_index].videoData = item)
 
-  const clientDataList = dataList.map(data_item => {
-    if (!data_item) return null
-    return toClientVideoMetadata(data_item)
+  initial_entries.forEach(entry => {
+    if (!entry.videoData)
+      return
+
+    entry.flags = video_check(entry.videoData)
+    entry.videoData = toClientVideoMetadata(entry.videoData)
+    entry.input = entry.videoData.link
   })
-
-  const
-    inputs = clientDataList.map(i => i ? i.link : ""),
-    flags = dataList.map(i => i ? check(i) : [])
 
   return (
     <div className={styles.page}>
-      <VoteForm i_inputs={inputs} i_flags={flags} i_video_data={clientDataList}/>
+      <VoteForm initial_entries={initial_entries}/>
     </div>
   )
 }

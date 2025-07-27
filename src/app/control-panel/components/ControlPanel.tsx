@@ -17,6 +17,8 @@ interface Props {
 
 export default function ControlPanel({ labelConfigs, videoPool0 }: Props) {
   const [activeTab, setActiveTab] = useState("Labels")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [pageVideoPool, setPageVideoPool] = useState(videoPool0)
 
   return (
     <div className={styles.mainContainer}>

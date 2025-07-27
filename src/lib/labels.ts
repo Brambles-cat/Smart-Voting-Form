@@ -12,7 +12,7 @@ export const iconMap = { ineligible: "x", warn: "warn", eligible: "checkmark" }
  * @param new_labels New label configurations to use throughout the app.
  * These must all have triggers that are predefined by the default label config
  */
-export function setLabels(new_labels: Flag[]) {
+export function updateLabels(new_labels: Flag[]) {
     new_labels.forEach(label => {
         Object.entries(labels).find(([, config]) => config.trigger === label.trigger)![1] = label
     })
@@ -30,7 +30,7 @@ type label_key =
 	"unsupported_site" |
 	"littleshy_vid"
 
-export const labels: Record<string, Flag> = {
+export const labels: Record<label_key, Flag> = {
     invalid_link:     { name: 'Invalid link',       type: 'ineligible', trigger: 'Non url entry',               details: 'Not a valid link' },
 	duplicate_votes:  { name: 'Duplicate vote',     type: 'ineligible', trigger: 'Duplicate links in ballot',   details: 'Duplicate votes are not eligible' },
 	missing_id:       { name: 'Missing id',         type: 'ineligible', trigger: 'No video id in link',         details: 'No video id present' },

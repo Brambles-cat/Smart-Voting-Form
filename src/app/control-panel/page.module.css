@@ -54,9 +54,10 @@
 .buttonRow {
   display: flex;
   justify-content: right;
+  gap: 10px;
 }
 
-.addFieldBtn, .subFieldBtn {
+.buttonRow > button {
   width: 35px;
   font-size: x-large;
   background-color: orange;
@@ -66,12 +67,14 @@
   color: white;
 }
 
-.addFieldBtn:hover, .subFieldBtn:hover {
+.buttonRow > button:hover {
   background-color: orangered;
 }
 
-.subFieldBtn {
-  margin-left: 10px;
+.labelSettingsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .labelSettings {
@@ -91,6 +94,7 @@
 
 .activeLabel {
   background-color: lightblue;
+  order: -1;
 }
 
 .inputGroup {

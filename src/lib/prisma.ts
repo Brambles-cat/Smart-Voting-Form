@@ -1,8 +1,8 @@
 // A file creating and ensuring only a single connection existing to the database between reloads made when ran using `next dev`
 
 import { PrismaClient } from "@/generated/prisma";
-import { labels, setLabels } from "./labels";
-import { LabelConfig } from "./types";
+import { labels, updateLabels } from "./labels";
+import { Flag } from "./types";
 
 /**
  * Create a new db connection while ensuring the label_config table is initialized with the default values defined in labels.ts.
@@ -10,7 +10,7 @@ import { LabelConfig } from "./types";
  */
 async function initConnection() {
     const prisma = new PrismaClient()
-    const present = await prisma.label_config.findMany() as LabelConfig[]
+    const present = await prisma.label_config.findMany() as Flag[]
 
     if (!present.length) {
         await prisma.label_config.createMany({
@@ -18,7 +18,7 @@ async function initConnection() {
         })
     }
     else
-        setLabels(present)
+        updateLabels(present)
 
     return prisma
 }

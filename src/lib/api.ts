@@ -130,4 +130,23 @@ export async function removePlaylistItem(playlist_id: string, item_id: number) {
 
 
 
+export type APILabelUpdateRequestBody = {
+    label_updates: Flag[]
+}
+
+/**
+ * Update the label details shown in ballot entries when videos have these labels
+ * @param label_updates New label data to replace corresponding existing ones
+ */
+export async function updateLabels(label_updates: Flag[]) {
+    const body: APILabelUpdateRequestBody = { label_updates }
+
+    const res = await fetch("/api/label_update", {
+        method: "POST",
+        body: JSON.stringify(body)
+    })
+
+    return res.status === 200
+}
+
 // function search() {}

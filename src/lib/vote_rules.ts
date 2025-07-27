@@ -1,12 +1,12 @@
 import { video_metadata } from "@/generated/prisma";
-import { Flag } from "./types";
+import { BallotEntryField, Flag } from "./types";
 import { labels } from "./labels";
 
 /**
- * Checks video metadata against some of the video eligibility rules
- * @returns A list of flags for any that may apply
+ * Server side checks of video metadata to determine eligibility
+ * @returns A list of flags for any that may apply to the video
  */
-export default function check(video_metadata: video_metadata): Flag[] {
+export function video_check(video_metadata: video_metadata): Flag[] {
     const flags: Flag[] = []
 
     const now = new Date(Date.now())
@@ -43,4 +43,40 @@ export default function check(video_metadata: video_metadata): Flag[] {
         flags.push(labels.littleshy_vid)
 
     return flags
+}
+
+/**
+ * Client side checks for ballot eligibility rules
+ * @param entries 
+ * @returns The number of unique creators found, eligible entries, and all entries with ballot flags included
+ */
+export function ballot_check(entries: BallotEntryField[]) {
+  const uniqueVids = new Set()
+  const creatorCounts = new Map()
+  const entryCopies = entries.map(e => ({ ...e, flags: [...e.flags] })) // Shallow-ish copy to avoid accumulating the same flags in entries
+
+  for (const entry of entryCopies) {
+    if (!entry.videoData)
+      continue
+
+    const vid_id = `${entry.videoData.id}-${entry.videoData.platform}`
+    const creator_id = `${entry.videoData.uploader}-${entry.videoData.platform}`
+
+    if (uniqueVids.has(vid_id))
+      entry.flags.push(labels.duplicate_votes)
+    else
+      uniqueVids.add(vid_id)
+
+    const newCount = (creatorCounts.get(entry.videoData.uploader) || 0) + 1
+    creatorCounts.set(creator_id, newCount)
+
+    if (newCount > 2)
+      entry.flags.push(labels.no_simping)
+  }
+
+  return {
+    uniqueCreators: creatorCounts.size, // TODO, option to count creator from flagged or not in /control-panel
+    eligible: entryCopies.filter(entry => entry.input && !entry.flags.find(flag => flag.type === "ineligible")),
+    checkedEntries: entryCopies
+  }
 }

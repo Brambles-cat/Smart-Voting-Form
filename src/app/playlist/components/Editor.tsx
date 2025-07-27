@@ -58,10 +58,10 @@ export default function EditablePlaylist({ videos, playlistName, playlistDescrip
   };
 
   const removeVideo = async (index: number) => {
-    let body = await removePlaylistItem(playlist_id.current!, index)
+    const result = await removePlaylistItem(playlist_id.current!, index)
 
-    if (body)
-      return alert(body)
+    if (result)
+      return alert(result)
 
     const spliced = [...entries]
     spliced.splice(index, 1)

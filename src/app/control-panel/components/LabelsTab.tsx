@@ -9,6 +9,7 @@ import { label_config } from "@/generated/prisma";
 import { validate } from "@/lib/api";
 import { BallotEntryField } from "@/lib/types";
 import { iconMap, labels } from "@/lib/labels";
+import { ballot_check } from "@/lib/vote_rules";
 
 interface Props {
   labelSettings: label_config[]
@@ -56,16 +57,16 @@ export default function LabelsTab({ labelSettings }: Props) {
     }
   }
 
+  const { checkedEntries } = ballot_check(voteFields)
+
   return (
     <div className={styles.tabContents}>
       <div className={styles.testFields}>
-        {voteFields.map((field, i) =>
+        {checkedEntries.map((field, i) =>
           <VoteField
             key={i}
             index={i}
-            fieldInput={field.input}
-            fieldFlags={field.flags}
-            displayData={field.videoData}
+            voteData={field}
             onChanged={changed}
             onPaste={() => {}}
           />
@@ -74,52 +75,52 @@ export default function LabelsTab({ labelSettings }: Props) {
 
       <div className={styles.buttonRow}>
         { voteFields.length < 10 &&
-          <button className={styles.addFieldBtn}
-          onClick={() => setVoteFields([...voteFields, { flags: [], videoData: null, input: "" }])}>+</button>
+          <button onClick={() => setVoteFields([...voteFields, { flags: [], videoData: null, input: "" }])}>+</button>
         }
         { voteFields.length > 1 &&
-          <button className={styles.subFieldBtn}
-          onClick={() => setVoteFields(voteFields.slice(0, -1))}>-</button>
+          <button onClick={() => setVoteFields(voteFields.slice(0, -1))}>-</button>
         }
       </div>
 
-      {labelsConfigs.map((labelConfig, index) => (
-        <div key={index} className={styles.labelSettings}>
-          <div className={styles.hoverInfo}>
-            <div className={styles.triggeredBy}>Triggered by: {labelConfig.trigger}</div>
-          </div>
+      <div className={styles.labelSettingsContainer}>
+        {labelsConfigs.map((labelConfig, index) => (
+          <div key={index} className={`${styles.labelSettings} ${checkedEntries.find(f => f.flags.find(fl => labelConfig.trigger === fl.trigger)) && styles.activeLabel}`}>
+            <div className={styles.hoverInfo}>
+              <div className={styles.triggeredBy}>Triggered by: {labelConfig.trigger}</div>
+            </div>
 
-          <div className={styles.inputGroup}>
-            <input
-              type="text"
-              value={labelConfig.name}
-              onChange={(e) => labelChange(index, { name: e.target.value })}
-              className={styles.labelNameField}
-              placeholder="Name"
-            />
-
-            <input
-              type="text"
-              value={labelConfig.details}
-              onChange={(e) => labelChange(index, { details: e.target.value })}
-              className={styles.labelDetailsField}
-              placeholder="Details"
-            />
-
-            <button
-              className={styles.iconButton}
-              onClick={() => labelChange(index, { type: labelsConfigs[index].type === "x" ? "warn" : "x"})}
-            >
-              <Image
-                src={`${iconMap[labelConfig.type as keyof typeof iconMap]}.svg`}
-                alt=""
-                width={24}
-                height={24}
+            <div className={styles.inputGroup}>
+              <input
+                type="text"
+                value={labelConfig.name}
+                onChange={(e) => labelChange(index, { name: e.target.value })}
+                className={styles.labelNameField}
+                placeholder="Name"
               />
-            </button>
+
+              <input
+                type="text"
+                value={labelConfig.details}
+                onChange={(e) => labelChange(index, { details: e.target.value })}
+                className={styles.labelDetailsField}
+                placeholder="Details"
+              />
+
+              <button
+                className={styles.iconButton}
+                onClick={() => labelChange(index, { type: labelsConfigs[index].type === "x" ? "warn" : "x"})}
+              >
+                <Image
+                  src={`${iconMap[labelConfig.type as keyof typeof iconMap]}.svg`}
+                  alt=""
+                  width={24}
+                  height={24}
+                />
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <button className={styles.saveButton}>Save</button>
     </div>

@@ -1,6 +1,6 @@
 import { fetch_metadata } from '@/lib/external'
 import { getUser, removeBallotItem, setBallotItem } from '@/lib/database'
-import check from '@/lib/vote_rules'
+import { video_check } from '@/lib/vote_rules'
 import { NextRequest } from 'next/server'
 import { APIValidateRequestBody } from '@/lib/api'
 import { toClientVideoMetadata } from '@/lib/util'
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const fetch_result = await fetch_metadata(body.link)
   const ballot_target = body.index !== undefined && uid && (await getUser(uid, true))!.id
 
-  const [flags, metadata] = "type" in fetch_result ? [[fetch_result], undefined] : [check(fetch_result), fetch_result]
+  const [flags, metadata] = "type" in fetch_result ? [[fetch_result], undefined] : [video_check(fetch_result), fetch_result]
 
   if (ballot_target) {
     if (!metadata)

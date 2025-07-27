@@ -15,8 +15,6 @@ export type VideoPlatform =
     "Odysee" |
     "Newgrounds"
 
-export type IndexedVideoMetadata = video_metadata & { playlist_index: number }
-
 export type VideoDataClient = Omit<video_metadata, "upload_date" | "duration" | "whitelisted"> & { link: string }
 
 /**

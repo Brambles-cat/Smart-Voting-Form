@@ -60,30 +60,40 @@ async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPIt
 /**
  * Given a YouTube video URL, extracts the video id from it.
  * 
- * Returns None if no video id can be extracted.
+ * Returns null if no video id can be extracted.
  */
-function extract_video_id(url: URL) {
-    let video_id: string | null = null
+function extract_video_id(url: URL): string | undefined {
+    // Parse the URL to retrieve the video id, which is the only parameter we
+    // care about for the purpose of normalization. We currently recognize the
+    // following types of YouTube URL, some of which have the video id in a
+    // different place:
+    //
+    // Regular YouTube URL:      https://www.youtube.com/watch?v={VIDEO ID}
+    // No-subdomain YouTube URL: https://youtube.com/watch?v={VIDEO ID}
+    // Mobile YouTube URL:       https://m.youtube.com/watch?v={VIDEO ID}
+    // Livestream URL:           https://www.youtube.com/live/{VIDEO ID}
+    // Shortened URL:            https://youtu.be/{VIDEO ID}
+    // Shorts URL                https://www.youtube.com/shorts/{VIDEO ID}
 
-    const path = url.pathname
-    const query_params = url.searchParams
+    const path = url.pathname.split("/")[1]
+    let match: RegExpExecArray | null = null
 
-    // Regular YouTube URL: eg. https://www.youtube.com/watch?v=9RT4lfvVFhA
-    if (path === "/watch")
-        video_id = query_params.get("v")
+    if (["watch", "live", "shorts"].includes(path)) {
+        const part = url.pathname + url.search
+
+        const patterns = [
+            /^\/watch\/?\?(?:.*&)?v=([a-zA-Z0-9_-]+)/, // Regular YouTube URL: eg. https://www.youtube.com/watch?v=9RT4lfvVFhA
+            /^\/shorts\/([a-zA-Z0-9_-]+)/, // Shorts URL: eg. https://www.youtube.com/shorts/5uFeg2BOPNo
+            /^\/live\/([a-zA-Z0-9_-]+)/, // Livestream URL: eg. https://www.youtube.com/live/Q8k4UTf8jiI
+        ]
+        patterns.find(pattern => match = pattern.exec(part))
+    }
     else {
-        const livestream_match = /^\/live\/([a-zA-Z0-9_-]+)/.exec(path)
-        const shortened_match = /^\/([a-zA-Z0-9_-]+)/.exec(path)
-
-        if (livestream_match)
-            // Livestream URL: eg. https://www.youtube.com/live/Q8k4UTf8jiI
-            video_id = livestream_match[1]
-        else if (shortened_match)
-            // Shortened YouTube URL: eg. https://youtu.be/9RT4lfvVFhA
-            video_id = shortened_match[1]
+        // Shortened YouTube URL: eg. https://youtu.be/9RT4lfvVFhA
+        match = /^([a-zA-Z0-9_-]+)/.exec(path)
     }
 
-    return video_id
+    return match?.[1]
 }
 
 /**
