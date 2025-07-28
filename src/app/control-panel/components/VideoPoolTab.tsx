@@ -1,11 +1,14 @@
 "use client";
 
+import ConstructionZone from "@/app/placeholder";
 import { useState } from "react";
 
 const items = ["Item 1", "Item 2", "Item 3", "Item 4"]
 
 export default function VideoPoolTab() {
   return (
+    process.env.NODE_ENV === "production" && <ConstructionZone/> ||
+
     <div className="grid grid-cols-2 gap-4">
       {items.map((item, idx) => (
         <div key={idx} className="relative border p-4 rounded shadow">

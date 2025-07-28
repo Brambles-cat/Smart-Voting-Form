@@ -40,13 +40,16 @@ export function toClientVideoMetadata(video_metadata: video_metadata): VideoData
 
 /**
  * Tests an input string to determine if it is a valid link
- * @returns false if input is not a link, or an array of 0 or 1 flag if the link is or isn't from a supported platform respectively
+ * @returns false if input doesn't resemble a link, or an array of 0 or 1 flag if the link is or isn't from a supported platform respectively
  */
 export function testLink(input: string): false | Flag[] {
-  const valid = /(https?:\/\/)?(\w+\.)?(pony\.tube|youtube\.com|youtu\.be|bilibili\.com|vimeo\.com|thishorsie\.rocks|dailymotion\.com|dai\.ly|tiktok\.com|twitter\.com|x\.com|odysee\.com|newgrounds\.com|bsky\.app)\/?[^\s]{0,500}/;
-  const link = /https?:\/\//;
+    input = input.trim()
+    if (!/^[^\s]+$/.test(input)) return false
+    
+    const valid = /(https?:\/\/)?(\w+\.)?(pony\.tube|youtube\.com|youtu\.be|bilibili\.com|vimeo\.com|thishorsie\.rocks|dailymotion\.com|dai\.ly|tiktok\.com|twitter\.com|x\.com|odysee\.com|newgrounds\.com|bsky\.app)\/?[^\s]{0,500}/
+    const link = /(https?:\/\/)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+/
 
-  if (valid.test(input)) return [];
-  if (link.test(input)) return [labels.unsupported_site];
-  return false;
+    if (valid.test(input)) return []
+    if (link.test(input)) return [labels.unsupported_site]
+    return false
 }
