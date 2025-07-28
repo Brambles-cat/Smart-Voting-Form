@@ -7,7 +7,7 @@ import VoteField from "@/app/components/vote_field";
 import { testLink } from "@/lib/util";
 import { updateLabels, validate } from "@/lib/api";
 import { BallotEntryField, Flag } from "@/lib/types";
-import { iconMap, labels } from "@/lib/labels";
+import { labels, stampMap } from "@/lib/labels";
 import { ballot_check } from "@/lib/vote_rules";
 
 interface Props {
@@ -18,12 +18,16 @@ export default function LabelsTab({ labelSettings }: Props) {
   const [voteFields, setVoteFields] = useState<BallotEntryField[]>([{ flags: [], videoData: null, input: "" }])
   const [labelsConfigs, setLabels] = useState(labelSettings)
   const inputTimeouts = useRef<NodeJS.Timeout[]>([])
+  const [changesSaved, setSaved] = useState(true)
+  const savedLabels = useRef(JSON.stringify(labelsConfigs))
   const pasting = useRef(false)
 
   const labelChange = (index: number, newVals: Partial<Flag>) => {
     const updated = [...labelsConfigs]
     updated[index] = { ...updated[index], ...newVals }
+
     setLabels(updated)
+    setSaved(JSON.stringify(updated) === savedLabels.current)
   }
 
   const updateField = (index: number, newFieldVals: Partial<BallotEntryField>) => {
@@ -40,7 +44,7 @@ export default function LabelsTab({ labelSettings }: Props) {
     updateField(field_index, { input, flags: field_flags, videoData: video_data || null })
   }
 
-  const changed = async (e: React.ChangeEvent<HTMLInputElement>, field_index: number) => {    
+  const voteFieldEdit = async (e: React.ChangeEvent<HTMLInputElement>, field_index: number) => {    
     const input = e.currentTarget.value.trim()
     const isLink = testLink(input)
 
@@ -66,24 +70,31 @@ export default function LabelsTab({ labelSettings }: Props) {
   const pasted = () => { pasting.current = true }
 
   const saveChanges = async () => {
-    await updateLabels(labelsConfigs)
+    const res = await updateLabels(labelsConfigs)
+
+    if (res.status === 200) {
+      savedLabels.current = JSON.stringify(labelsConfigs)
+      setSaved(true)
+    }
+    else
+      alert("Failed to save")
   }
 
-  const newLabelMap = new Map<string, Flag>(labelSettings.map(s => [s.trigger, s]))
-  const activeLabels = new Map<string, string>()
-  let { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields)
+  const newLabelMap = new Map<string, Flag>(labelsConfigs.map(s => [s.trigger, s]))
+  const activeLabels = new Set<string>()
+  const { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields)
 
   if (eligible.length < 5)
-    activeLabels.set(labels.too_few_votes.trigger, newLabelMap.get(labels.too_few_votes.trigger)!.details)
+    activeLabels.add(labels.too_few_votes.trigger)
   else if (uniqueCreators < 5)
-    activeLabels.set(labels.diversity_rule.trigger, newLabelMap.get(labels.diversity_rule.trigger)!.details)
+    activeLabels.add(labels.diversity_rule.trigger)
 
-  // Apply label configuration fields (desc for now) for previewing
-  checkedEntries = checkedEntries.map(e => (
+  // Apply label configuration fields for previewing
+  const withPreviews = checkedEntries.map(e => (
     {
       ...e,
       flags: e.flags.map(f => {
-        activeLabels.set(f.trigger, newLabelMap.get(f.trigger)?.details || f.details)
+        activeLabels.add(f.trigger)
         return newLabelMap.get(f.trigger) || f 
       })
     }
@@ -92,12 +103,12 @@ export default function LabelsTab({ labelSettings }: Props) {
   return (
     <div className={styles.tabContents}>
       <div className={styles.testFields}>
-        {checkedEntries.map((field, i) =>
+        {withPreviews.map((field, i) =>
           <VoteField
             key={i}
             index={i}
             voteData={field}
-            onChanged={changed}
+            onChanged={voteFieldEdit}
             onPaste={pasted}
           />
         )}
@@ -139,12 +150,12 @@ export default function LabelsTab({ labelSettings }: Props) {
               <button
                 className={styles.iconButton}
                 onClick={() => {
-                  const t = labelsConfigs[index].type // TODO, turn this into an enum
+                  const t = labelConfig.type
                   labelChange(index, { type: t === "ineligible" && "warn" || t === "warn" && "disabled" || "ineligible"})
                 }}
               >
                 <Image
-                  src={`${iconMap[labelConfig.type as keyof typeof iconMap]}.svg`}
+                  src={stampMap[labelConfig.type].icon}
                   alt=""
                   width={24}
                   height={24}
@@ -155,7 +166,7 @@ export default function LabelsTab({ labelSettings }: Props) {
         ))}
       </div>
 
-      <button className={styles.saveButton} onClick={saveChanges}>Save</button>
+      <button className={`${styles.saveButton} ${!changesSaved && styles.saveActive}`} onClick={saveChanges}>Save</button>
     </div>
   )
 }

@@ -146,7 +146,7 @@ export async function updateLabels(label_updates: Flag[]) {
         body: JSON.stringify(body)
     })
 
-    return res.status === 200
+    return res
 }
 
 // function search() {}

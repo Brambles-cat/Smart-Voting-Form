@@ -12,6 +12,7 @@ const youtube_domains = ["m.youtube.com", "www.youtube.com", "youtube.com", "you
 // Non youtube domains that are also supported
 const accepted_domains = [
     "dailymotion.com",
+    "dai.ly",
     "pony.tube",
     "vimeo.com",
     "bilibili.com",
@@ -20,7 +21,8 @@ const accepted_domains = [
     "twitter.com",
     "x.com",
     "odysee.com",
-    "newgrounds.com"
+    "newgrounds.com",
+    "bsky.app"
 ]
 
 async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPItems[] }> {
@@ -41,11 +43,11 @@ async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPIt
 
         cmd.stdout.on('data', (data) => {
             response += data.toString()
-        });
+        })
 
         cmd.stderr.on('data', (data) => {
             reject(data)
-        });
+        })
 
         cmd.on('close', () => {
             try {
@@ -53,7 +55,7 @@ async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPIt
             } catch {
                 reject(`Failed to parse json: ${response}`)
             }
-        });
+        })
     })
 }
 
@@ -62,7 +64,7 @@ async function ytdlp_fetch(url: string): Promise<YTDLPItems | { entries: YTDLPIt
  * 
  * Returns null if no video id can be extracted.
  */
-function extract_video_id(url: URL): string | undefined {
+function extract_yt_id(url: URL): string | undefined {
     // Parse the URL to retrieve the video id, which is the only parameter we
     // care about for the purpose of normalization. We currently recognize the
     // following types of YouTube URL, some of which have the video id in a
@@ -93,7 +95,8 @@ function extract_video_id(url: URL): string | undefined {
         match = /^([a-zA-Z0-9_-]+)/.exec(path)
     }
 
-    return match?.[1]
+    // Youtube video ids are strictly 11 characters
+    return match?.[1].slice(0, 11)
 }
 
 /**
@@ -129,7 +132,7 @@ function convert_iso8601_duration_to_seconds(iso8601_duration: string) {
 }
 
 async function from_youtube(url: URL): Promise<video_metadata | Flag> {
-    const video_id = extract_video_id(url)
+    const video_id = extract_yt_id(url)
 
     if (!video_id)
         return labels.missing_id
@@ -177,10 +180,16 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
     if (!(accepted_domains.includes(netloc)))
         return labels.unsupported_site
 
-    const path_bits = url.pathname.split("/")
-    const video_id = path_bits.at(-1) === "" ? path_bits.at(-2) : path_bits.at(-1)
+    /**
+     * Non yotube videos seem to have their ids completely within the
+     * url path, so it should be fine if that is used as the id in the db
+     * until otherwise necessary. This resolves the issue of potential links
+     * with multiple videos, such as https://x.com/_Maka_11/status/1790185560805683463/video/1
+     * which contains a post id and an index
+     */
+    const video_db_id = url.pathname
 
-    if (!video_id)
+    if (!video_db_id)
         return labels.missing_id
 
     let site: string = netloc.split(".")[0]
@@ -199,9 +208,12 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
         case "Thishorsie":
             site = "ThisHorsieRocks"
             break
+        case "Dai":
+            site = "Dailymotion"
+            break
     }
 
-    let video_data = await getVideoMetadata(video_id, site)
+    let video_data = await getVideoMetadata(video_db_id, site)
 
     if (video_data)
         return video_data
@@ -251,7 +263,7 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
 
     video_data = {
         title: response["title"],
-        id: video_id,
+        id: video_db_id,
         thumbnail: response["thumbnail"] || "",
         uploader: response["uploader"],
         uploader_id: response["uploader_id"],
@@ -270,6 +282,9 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
  * @returns A video metadata object if the fetch was successful, or a Flag that details what went wrong
  */
 export async function fetch_metadata(url_str: string) {
+    if (!url_str.startsWith("https://"))
+        url_str = "https://" + url_str
+
     const url = new URL(url_str)
     return youtube_domains.includes(url.hostname) ? from_youtube(url) : from_other(url)
 }

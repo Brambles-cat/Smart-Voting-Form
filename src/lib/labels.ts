@@ -2,10 +2,14 @@
 
 import { Flag } from "./types"
 
-/**
- * Mapping of label types to corresponding icon names
- */
-export const iconMap = { ineligible: "x", warn: "warn", eligible: "checkmark", disabled: "disabled" }
+export type flagTypes = "disabled" | "eligible" | "warn" | "ineligible"
+
+export const stampMap: Record<flagTypes, { severity: number, icon: string }> = {
+	ineligible: { severity: 2, icon: "x.svg" 	     },
+	warn: 		{ severity: 1, icon: "warn.svg"  	 },
+	eligible: 	{ severity: 0, icon: "checkmark.svg" },
+	disabled: 	{ severity: 0, icon: "disabled.svg"  },
+}
 
 /**
  * Update the configuration for any number of labels
@@ -16,6 +20,19 @@ export function updateLabels(new_labels: Flag[]) {
 	const keyMap = new Map<string, label_key>(Object.entries(labels).map(([k, flag]) => [flag.trigger, k as label_key]))
 
 	new_labels.forEach(label => { labels[keyMap.get(label.trigger)!] = label })
+}
+
+/**
+ * Get the eligibility level and icon name for a given label and
+ * passing condition used when rendering related components
+ * @param label The label to apply when the condition fails
+ * @param passing The condition in which the label would be applied when failed
+ */
+export function labelStamp(label: Flag, passing: boolean) {
+	if (label.type === "disabled" || passing)
+		return { ...stampMap.eligible, label }
+
+	return { ...stampMap[label.type], label }
 }
 
 type label_key =
@@ -42,7 +59,7 @@ export const labels: Record<label_key, Flag> = {
 	too_short:        { name: '4a',                 type: 'ineligible', trigger: '<30 second video',            details: 'Short length: Videos must be 30 seconds or longer not including intros/outros/credits/etc' },
 	maybe_too_short:  { name: '4a',                 type: 'warn',       trigger: '<=45 second video',           details: 'Short length: Videos must be 30 seconds or longer not including intros/outros/credits/etc' },
 	diversity_rule:   { name: '5a',                 type: 'ineligible', trigger: '<5 creators from eligible',	details: 'You must have at least five eligible votes from five different creators' },
-	no_simping:       { name: '5b',                 type: 'warn',       trigger: '>2 videos from same creator', details: 'You can include up to two videos from a creator if the videos are unique and you\'re including votes for at least five creators total. Don\'t vote for multiple parts in a series or very similar videos from the same creator' },
+	no_simping:       { name: '5b',                 type: 'warn',       trigger: '>2/creator or 2 & <5 unique',	details: 'You can include up to two videos from a creator if the videos are unique and you\'re including votes for at least five creators total. Don\'t vote for multiple parts in a series or very similar videos from the same creator' },
 	unsupported_site: { name: '1c',                 type: 'ineligible', trigger: 'Unsupported platform link',   details: 'Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time' },
 	littleshy_vid:    { name: '5d',                 type: 'ineligible', trigger: 'Littleshy video',             details: 'Don\'t vote for videos from the current host\'s channel, LittleshyFiM' }
 }
