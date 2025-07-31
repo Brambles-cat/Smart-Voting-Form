@@ -157,3 +157,25 @@ export function setLabelConfigs(new_configs: Flag[]) {
         )
     )
 }
+
+export async function getAllData() {
+    const [
+        users,
+        video_metadata,
+        ballot_item,
+        playlist,
+        playlist_item,
+        label_config,
+        manual_label
+    ] = await Promise.all([
+        prisma.user.findMany(),
+        prisma.video_metadata.findMany(),
+        prisma.ballot_item.findMany(),
+        prisma.playlist.findMany(),
+        prisma.playlist_item.findMany(),
+        prisma.label_config.findMany(),
+        prisma.manual_label.findMany()
+    ])
+
+    return { users, video_metadata, ballot_item, label_config, manual_label, playlist, playlist_item }
+}

@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import LabelsTab from "./LabelsTab";
-import StatsTab from "./StatsTab";
+import DataTab from "./DataTab";
 import VideoPoolTab from "./VideoPoolTab";
 import styles from "../page.module.css"
 import { video_metadata } from "@/generated/prisma";
 import { Flag } from "@/lib/types";
 
-const tabs = ["Stats", "Labels", "Pool"]
+const tabs = ["Data", "Labels", "Pool"]
 
 interface Props {
   labelConfigs: Flag[]
@@ -35,7 +35,7 @@ export default function ControlPanel({ labelConfigs, videoPool0 }: Props) {
       </div>
 
       {
-        activeTab === "Stats" && <StatsTab /> ||
+        activeTab === "Data" && <DataTab /> ||
         activeTab === "Labels" && <LabelsTab labelSettings={labelConfigs}/> ||
         activeTab === "Pool" && <VideoPoolTab />
       }
