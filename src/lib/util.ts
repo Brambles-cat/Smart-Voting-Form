@@ -4,7 +4,7 @@ import { video_metadata } from "@/generated/prisma";
 import { Flag, VideoDataClient, VideoPlatform } from "./types";
 import { labels } from "./labels";
 
-const platform_bases = {
+/*const platform_bases = {
     "YouTube": "www.youtube.com/watch?v=_id_",
     "Dailymotion": "www.dailymotion.com/video/_id_",
     "Vimeo": "vimeo.com/_id_",
@@ -23,9 +23,28 @@ const platform_bases = {
  * @param data An object containing the platform, id, and uploader id of a video,
  * which are the maximum needed to reconstruct any link from the supported platforms
  * @returns The reconstructed link
- */
+ * /
 export function getVideoLink(data: { platform: string, id: string, uploader_id: string }) {
     return `https://${platform_bases[data.platform as VideoPlatform].replace("_id_", data.id).replace("_uid_", data.uploader_id)}`
+}
+*/
+
+const platform_bases_temp = {
+    "YouTube": "www.youtube.com/watch?v=",
+    "Dailymotion": "www.dailymotion.com",
+    "Vimeo": "vimeo.com",
+    "ThisHorsieRocks": "pt.thishorsie.rocks",
+    "PonyTube": "pony.tube",
+    "Bilibili": "www.bilibili.com",
+    "Twitter": "x.com",
+    "Bluesky": "bsky.app/profile",
+    "Tiktok": "www.tiktok.com",
+    "Odysee": "odysee.com",
+    "Newgrounds": "www.newgrounds.com"
+}
+
+export function getVideoLinkTemp(data: { platform: string, id: string, uploader_id: string }) {
+    return `https://${platform_bases_temp[data.platform as VideoPlatform]}${data.id}`
 }
 
 /**
@@ -34,7 +53,7 @@ export function getVideoLink(data: { platform: string, id: string, uploader_id: 
 export function toClientVideoMetadata(video_metadata: video_metadata): VideoDataClient {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { whitelisted, duration, upload_date, ...clientReceivable } = video_metadata
-    const withLink = {...clientReceivable, link: getVideoLink(clientReceivable) }
+    const withLink = {...clientReceivable, link: getVideoLinkTemp(clientReceivable) }
     return withLink
 }
 
