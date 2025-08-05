@@ -82,7 +82,9 @@ export default function LabelsTab({ labelSettings }: Props) {
 
   const newLabelMap = new Map<string, Flag>(labelsConfigs.map(s => [s.trigger, s]))
   const activeLabels = new Set<string>()
-  const { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields)
+
+  // Using the client bundled labels here is fine since it's used only to determine active labels
+  const { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields, labels)
 
   if (eligible.length < 5)
     activeLabels.add(labels.too_few_votes.trigger)

@@ -4,6 +4,7 @@ import { getBallotItems } from "@/lib/database";
 import styles from "./page.module.css"
 import { toClientVideoMetadata } from "@/lib/util";
 import { video_check } from "@/lib/vote_rules";
+import { getCliLabels } from "@/lib/labels";
 
 // Initialize entries to be shown if the user had previously made any in their ballot
 export default async function Home() {
@@ -31,7 +32,7 @@ export default async function Home() {
 
   return (
     <div className={styles.page}>
-      <VoteForm initial_entries={initial_entries}/>
+      <VoteForm initial_entries={initial_entries} cli_labels={getCliLabels()}/>
     </div>
   )
 }

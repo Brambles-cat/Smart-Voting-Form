@@ -1,6 +1,6 @@
 import { video_metadata } from "@/generated/prisma";
 import { BallotEntryField, Flag } from "./types";
-import { labels } from "./labels";
+import { client_labels, labels } from "./labels";
 
 /**
  * Server side checks of video metadata to determine eligibility
@@ -47,10 +47,11 @@ export function video_check(video_metadata: video_metadata): Flag[] {
 
 /**
  * Client side checks for ballot eligibility rules
- * @param entries 
+ * @param entries ballot entries
+ * @param cli_labels labels passed from server side rendering
  * @returns The number of unique creators found, eligible entries, and all entries with ballot flags included
  */
-export function ballot_check(entries: BallotEntryField[]) {
+export function ballot_check(entries: BallotEntryField[], cli_labels: client_labels) {
   const uniqueVids = new Set<string>()
   const creatorCounts = new Map<string, number>()
   const entryCopies = entries.map(e => ({ ...e, flags: [...e.flags] })) // Shallow-ish copy to avoid accumulating the same flags in entries
@@ -63,7 +64,7 @@ export function ballot_check(entries: BallotEntryField[]) {
     const creator_id = `${entry.videoData.uploader}-${entry.videoData.platform}`
 
     if (uniqueVids.has(vid_id))
-      entry.flags.push(labels.duplicate_votes)
+      entry.flags.push(cli_labels.duplicate_votes)
     else
       uniqueVids.add(vid_id)
 
@@ -83,7 +84,7 @@ export function ballot_check(entries: BallotEntryField[]) {
     const instances = creatorCounts.get(creator_id)!
 
     if (instances > 2 || instances === 2 && creatorCounts.size < 5)
-      entry.flags.push(labels.no_simping)
+      entry.flags.push(cli_labels.no_simping)
   }
 
   return {

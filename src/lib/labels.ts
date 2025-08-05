@@ -63,3 +63,26 @@ export const labels: Record<label_key, Flag> = {
 	unsupported_site: { name: '1c',                 type: 'ineligible', trigger: 'Unsupported platform link',   details: 'Currently allowed platforms: Bilibili, Bluesky, Dailymotion, Newgrounds, Odysee, Pony.Tube, ThisHorsie.Rocks, Tiktok, Twitter/X, Vimeo, and YouTube. This list is likely to change over time' },
 	littleshy_vid:    { name: '5d',                 type: 'ineligible', trigger: 'Littleshy video',             details: 'Don\'t vote for videos from the current host\'s channel, LittleshyFiM' }
 }
+
+export type client_labels = Record<
+	"invalid_link" | "duplicate_votes" | "no_simping" | "unsupported_site" | "diversity_rule" | "too_few_votes",
+	Flag
+>
+
+/**
+ * Getter for a smaller label set to send to the client when
+ * server side rendering components. This should never be imported
+ * in client side components since the client bundled labels
+ * object would only have its default values
+ * @returns labels required for client side checks
+ */
+export function getCliLabels(): client_labels {
+	return {
+		invalid_link: labels.invalid_link,
+		duplicate_votes: labels.duplicate_votes,
+		no_simping: labels.no_simping,
+		unsupported_site: labels.unsupported_site,
+		diversity_rule: labels.diversity_rule,
+		too_few_votes: labels.too_few_votes
+	}
+}

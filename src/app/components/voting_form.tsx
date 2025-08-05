@@ -6,16 +6,17 @@ import styles from "../page.module.css";
 import { BallotEntryField } from "@/lib/types";
 import VoteCounter from "./vote_counter";
 import VoteField from "./vote_field";
-import { testLink } from "@/lib/util";
+import { cliTestLink } from "@/lib/util";
 import { removeBallotItem, validate } from "@/lib/api";
-import { labels } from "@/lib/labels";
 import { ballot_check } from "@/lib/vote_rules";
+import { client_labels } from "@/lib/labels";
 
 interface Props {
+  cli_labels: client_labels,
   initial_entries: BallotEntryField[]
 }
 
-export default function VoteForm({ initial_entries }: Props) {
+export default function VoteForm({ cli_labels, initial_entries }: Props) {
   const [voteFields, setVoteFields] = useState<BallotEntryField[]>(initial_entries)
   const [warning, setWarning] = useState(false)
   const inputTimeouts = useRef<NodeJS.Timeout[]>([])
@@ -62,7 +63,7 @@ export default function VoteForm({ initial_entries }: Props) {
   // Handler for changes to the ballot entry fields
   const changed = async (e: React.ChangeEvent<HTMLInputElement>, field_index: number) => {    
     const input = e.currentTarget.value.trim()
-    const isLink = testLink(input)
+    const isLink = cliTestLink(input, cli_labels)
 
     clearTimeout(inputTimeouts.current[field_index])
 
@@ -71,7 +72,7 @@ export default function VoteForm({ initial_entries }: Props) {
       removeFieldSave(field_index)
     }
     else if (!isLink) {
-      updateField(field_index, { input, videoData: null, flags: [labels.invalid_link] })
+      updateField(field_index, { input, videoData: null, flags: [cli_labels.invalid_link] })
       removeFieldSave(field_index)
     }
     else if (isLink.length) {
@@ -130,12 +131,12 @@ export default function VoteForm({ initial_entries }: Props) {
   }
 
   // Ballot rules are checked in the client, here
-  const { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields)
+  const { uniqueCreators, eligible, checkedEntries } = ballot_check(voteFields, cli_labels)
   const should_warn = uniqueCreators < 5 || eligible.length < 5 || eligible.length !== checkedEntries.filter(entry => entry.input !== "").length
 
   return (
     <>
-      <VoteCounter eligibleCount={eligible.length} uniqueCreatorCount={uniqueCreators}/>
+      <VoteCounter cli_labels={cli_labels} eligibleCount={eligible.length} uniqueCreatorCount={uniqueCreators}/>
       <form className={styles.form} onSubmit={submit} autoComplete="off">
         {
           warning && <div className={styles.mask}>
