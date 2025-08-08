@@ -2,14 +2,10 @@ import { APILabelUpdateRequestBody } from "@/lib/api";
 import { setLabelConfigs } from "@/lib/database";
 import { updateLabels } from "@/lib/labels";
 import { NextRequest } from "next/server";
+import { requireAuth } from "../authorization";
 
 // Update label configs in the running server instance and in the db
-export async function POST(req: NextRequest) {
-    const uid = req.cookies.get("uid")?.value
-
-    if (!uid || uid !== process.env.OPERATOR)
-        return new Response(null, { status: 403 })
-
+async function handler(req: NextRequest) {
     const body: APILabelUpdateRequestBody = await req.json()
 
     await setLabelConfigs(body.label_updates)
@@ -17,3 +13,5 @@ export async function POST(req: NextRequest) {
 
     return new Response()
 }
+
+export const POST = requireAuth(handler)

@@ -4,6 +4,22 @@ import { prisma } from "./prisma";
 import { video_metadata } from "@/generated/prisma";
 import { Flag } from "./types";
 
+// Going to to see if this is worth keeping or if getUser first would be better
+// in the long run
+export async function withUser(
+    uid: string,
+    update: Parameters<typeof prisma.user.update>[0]["data"],
+    create: Omit<Parameters<typeof prisma.user.create>[0]["data"], "id" | "last_active"> = {}
+) {
+    const now = new Date(Date.now())
+
+    await prisma.user.upsert({
+        where: { id: uid },
+        update: { ...update, last_active: now },
+        create: { ...create, id: uid, last_active: now }
+    })
+}
+
 export async function getUser(uid: string, create = false) {
     const now = new Date(Date.now())
 
@@ -86,25 +102,35 @@ export async function removePlaylistItem(uid: string, playlist_id: string, item_
 export async function removeBallotItem(uid: string, index: number) {
     const now = new Date(Date.now())
 
-    await prisma.user.update({
-        where: { id: uid },
-        data: {
-            ballot_item: {
-                delete: {
-                    user_id_index: { user_id: uid, index }
-                }
-            },
-            last_ballot_update: now,
-            last_active: now
-        }
+    await withUser(uid, {
+        ballot_item: {
+            delete: {
+                user_id_index: { user_id: uid, index }
+            }
+        },
+        last_ballot_update: now
     })
 }
 
 export async function setBallotItem(uid: string, index: number, video_id: string, platform: string) {
-    await prisma.ballot_item.upsert({
-        where: { user_id_index: { user_id: uid, index: index } },
-        update: { video_id: video_id, platform: platform },
-        create: { video_id: video_id, platform: platform, user_id: uid, index: index }
+    const now = new Date(Date.now())
+    const item = { video_id: video_id, platform, index }
+
+    await withUser(uid, {
+        ballot_item: {
+            upsert: {
+                where: { user_id_index: { user_id: uid, index: index } },
+                update: item,
+                create: item
+            }
+        },
+        last_ballot_update: now
+    },
+    {
+        ballot_item: {
+            create: item
+        },
+        last_ballot_update: now
     })
 }
 
@@ -143,7 +169,7 @@ export function editPlaylist(playlist_id: string, owner_id: string, name: string
     })
 }
 
-export function getLabelConfigs(): Promise<Flag[]> {
+export function getLabelConfigs() {
     return prisma.label_config.findMany() as Promise<Flag[]>
 }
 

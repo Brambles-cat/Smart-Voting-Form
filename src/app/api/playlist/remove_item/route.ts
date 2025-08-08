@@ -2,7 +2,7 @@ import { APIRemovePIRequestBody } from "@/lib/api";
 import { getPlaylist, getUser, removePlaylistItem } from "@/lib/database";
 import { NextRequest, NextResponse } from "next/server";
 
-// Route for removing entries from ballots or playlists
+// Route for removing entries from playlists
 export async function POST(request: NextRequest) {
     const uid = request.cookies.get("uid")?.value
     if (!uid) return new NextResponse()

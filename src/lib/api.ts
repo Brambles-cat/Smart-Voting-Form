@@ -21,7 +21,7 @@ export type APIValidateResponseBody = {
 export async function validate(link: string, index?: number): Promise<APIValidateResponseBody> {
     const body: APIValidateRequestBody = { link, index }
 
-    const res = await fetch("/api/validate", {
+    const res = await fetch("/api/ballot/validate", {
         method: "POST",
         body: JSON.stringify(body),
         credentials: index === undefined ? "omit" : "same-origin"
@@ -48,7 +48,7 @@ export type APIAddResponseBody = { metadata: VideoDataClient } | { error: string
 export async function addPlaylistItem(link: string, playlist_id: string): Promise<APIAddResponseBody> {
     const body: APIAddRequestBody = { link, playlist_id }
 
-    const res = await fetch("/api/add", {
+    const res = await fetch("/api/playlist/add", {
         method: "POST",
         body: JSON.stringify(body)
     })
@@ -72,7 +72,7 @@ export type APIEditPlaylistRequestBody = {
  */
 export async function editPlaylistMeta(name: string, description: string, playlist_id: string) {
     const body: APIEditPlaylistRequestBody = { name, description, playlist_id }
-    const res = await fetch("/api/edit_playlist", {
+    const res = await fetch("/api/playlist/edit", {
       method: "POST",
       body: JSON.stringify(body)
     })
@@ -95,7 +95,7 @@ export async function removeBallotItem(index: number) {
     
     const body: APIRemoveBIRequestBody = { index }
 
-    const res = await fetch("/api/remove_ballot_item", {
+    const res = await fetch("/api/ballot/remove_item", {
         method: "POST",
         body: JSON.stringify(body)
     })
@@ -120,7 +120,7 @@ export async function removePlaylistItem(playlist_id: string, item_id: number) {
     
     const body: APIRemovePIRequestBody = { playlist_id, item_id }
 
-    const res = await fetch("/api/remove", {
+    const res = await fetch("/api/playlist/remove_item", {
         method: "POST",
         body: JSON.stringify(body)
     })
@@ -130,9 +130,7 @@ export async function removePlaylistItem(playlist_id: string, item_id: number) {
 
 
 
-export type APILabelUpdateRequestBody = {
-    label_updates: Flag[]
-}
+export type APILabelUpdateRequestBody = { label_updates: Flag[] }
 
 /**
  * Update the label details shown in ballot entries when videos have these labels

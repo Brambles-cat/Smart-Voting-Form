@@ -1,9 +1,10 @@
 import { getAllData } from "@/lib/database";
 import { NextRequest } from "next/server"
 import { utils, write } from "xlsx"
+import { requireAuth } from "../authorization";
 
 // Endpoint for downloading all data from all tables as an xlsx file
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
     const uid = req.cookies.get("uid")?.value
 
     if (!uid || uid !== process.env.OPERATOR)
@@ -26,3 +27,5 @@ export async function GET(req: NextRequest) {
         }
     })
 }
+
+export const GET = requireAuth(handler)

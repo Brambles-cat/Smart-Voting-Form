@@ -27,9 +27,11 @@ export default function VoteForm({ cli_labels, initial_entries }: Props) {
    * Shorthand for updating vote fields given their index
    */
   const updateField = (index: number, newFieldVals: Partial<BallotEntryField>) => {
-    const updated = [...voteFields]
-    updated[index] = { ...updated[index], ...newFieldVals }
-    setVoteFields(updated)
+    setVoteFields(prevFields => {
+      const updated = [...prevFields]
+      updated[index] = { ...updated[index], ...newFieldVals }
+      return updated
+    })
   }
 
   /**
@@ -39,8 +41,7 @@ export default function VoteForm({ cli_labels, initial_entries }: Props) {
    */
   const applyValidation = async (input: string, field_index: number) => {
     const { field_flags, video_data } = await validate(input, field_index)
-    // Input is necessary here since an outdated state without input would be used at this point
-    updateField(field_index, { input, flags: field_flags, videoData: video_data || null })
+    updateField(field_index, { flags: field_flags, videoData: video_data || null })
   }
 
   /**

@@ -31,9 +31,11 @@ export default function LabelsTab({ labelSettings }: Props) {
   }
 
   const updateField = (index: number, newFieldVals: Partial<BallotEntryField>) => {
-    const updated = [...voteFields]
-    updated[index] = { ...updated[index], ...newFieldVals }
-    setVoteFields(updated)
+    setVoteFields(prevFields => {
+      const updated = [...prevFields]
+      updated[index] = { ...updated[index], ...newFieldVals }
+      return updated
+    })
   }
 
   /**
@@ -41,7 +43,7 @@ export default function LabelsTab({ labelSettings }: Props) {
    */
   const applyValidation = async (input: string, field_index: number) => {
     const { field_flags, video_data } = await validate(input)
-    updateField(field_index, { input, flags: field_flags, videoData: video_data || null })
+    updateField(field_index, { flags: field_flags, videoData: video_data || null })
   }
 
   const voteFieldEdit = async (e: React.ChangeEvent<HTMLInputElement>, field_index: number) => {    
