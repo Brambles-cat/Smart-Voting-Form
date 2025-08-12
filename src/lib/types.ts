@@ -56,3 +56,12 @@ export type YTDLPItems = {
     uploader_id: string | undefined
     duration: number | undefined
 }
+
+export type VideoPoolItem = {
+    id: string
+    title: string
+    thumbnail: string
+    platform: string
+    uploader: string
+    votes: number
+}

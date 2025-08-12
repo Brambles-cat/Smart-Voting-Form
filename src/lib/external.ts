@@ -187,7 +187,7 @@ async function from_other(url: URL): Promise<video_metadata | Flag> {
      * with multiple videos, such as https://x.com/_Maka_11/status/1790185560805683463/video/1
      * which contains a post id and an index
      */
-    const video_db_id = url.pathname
+    const video_db_id = url.pathname.replace(/^\/*|\/*$/, "")
 
     if (!video_db_id)
         return labels.missing_id

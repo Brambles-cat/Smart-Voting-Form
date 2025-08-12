@@ -2,7 +2,7 @@
 
 import { prisma } from "./prisma";
 import { video_metadata } from "@/generated/prisma";
-import { Flag } from "./types";
+import { Flag, VideoPoolItem } from "./types";
 
 // Going to to see if this is worth keeping or if getUser first would be better
 // in the long run
@@ -204,4 +204,18 @@ export async function getAllData() {
     ])
 
     return { users, video_metadata, ballot_item, label_config, manual_label, playlist, playlist_item }
+}
+
+export async function getPool(): Promise<VideoPoolItem[]> {
+    const result = await prisma.$queryRaw`
+    SELECT v.id, v.title, v.thumbnail, v.uploader, v.platform, COUNT(CASE WHEN b.user_id IS NOT NULL THEN 1 END) votes
+    FROM video_metadata v
+    LEFT JOIN ballot_item b
+        ON b.video_id = v.id AND b.platform = v.platform
+    GROUP BY v.id, v.platform
+    ORDER BY votes DESC
+    LIMIT 30;
+    ` as VideoPoolItem[]
+
+    return result.map(item => ({ ...item, votes: Number(item.votes) }))
 }

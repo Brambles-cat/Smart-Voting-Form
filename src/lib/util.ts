@@ -31,16 +31,16 @@ export function getVideoLink(data: { platform: string, id: string, uploader_id: 
 
 const platform_bases_temp = {
     "YouTube": "www.youtube.com/watch?v=",
-    "Dailymotion": "www.dailymotion.com",
-    "Vimeo": "vimeo.com",
-    "ThisHorsieRocks": "pt.thishorsie.rocks",
-    "PonyTube": "pony.tube",
-    "Bilibili": "www.bilibili.com",
-    "Twitter": "x.com",
-    "Bluesky": "bsky.app/profile",
-    "Tiktok": "www.tiktok.com",
-    "Odysee": "odysee.com",
-    "Newgrounds": "www.newgrounds.com"
+    "Dailymotion": "www.dailymotion.com/",
+    "Vimeo": "vimeo.com/",
+    "ThisHorsieRocks": "pt.thishorsie.rocks/",
+    "PonyTube": "pony.tube/",
+    "Bilibili": "www.bilibili.com/",
+    "Twitter": "x.com/",
+    "Bluesky": "bsky.app/profile/",
+    "Tiktok": "www.tiktok.com/",
+    "Odysee": "odysee.com/",
+    "Newgrounds": "www.newgrounds.com/"
 }
 
 export function getVideoLinkTemp(data: { platform: string, id: string, uploader_id: string }) {
