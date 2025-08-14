@@ -28,7 +28,7 @@ export default function VoteField({ index, voteData, onChanged, onPaste }: Props
         onPaste={(e) => onPaste(e, index)}
         value={voteData.input}
         className={styles.input}
-        placeholder="Your answer"
+        placeholder="Your Vote"
       />
       <div className={styles.info}>
         {voteData.input && (

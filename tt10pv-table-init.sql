@@ -6,7 +6,7 @@ CREATE TABLE "user" (
 
 CREATE TABLE video_metadata (
 	id TEXT,
-	thumbnail TEXT,
+	thumbnail TEXT NOT NULL,
 	title TEXT NOT NULL,
 	uploader TEXT NOT NULL,
 	uploader_id TEXT NOT NULL,

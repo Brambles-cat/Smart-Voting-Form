@@ -38,7 +38,7 @@ model playlist_item {
 
 model video_metadata {
   id            String
-  thumbnail     String?
+  thumbnail     String
   title         String
   uploader      String
   uploader_id   String

@@ -46,6 +46,8 @@
   background-color: rgb(235, 235, 235);
   pointer-events: none;
   transition: opacity 0.3s;
+  outline: 1px solid black;
+  box-shadow: 5px 5px 8px;
 }
 
 .eligible_count:hover .eligible_count_note {
@@ -184,6 +186,7 @@
   transition: opacity 0.3s;
   pointer-events: none;
   z-index: 10;
+  outline: 1px solid gray;
 }
 
 .info:hover .note {
@@ -191,15 +194,27 @@
 }
 
 .note::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: -8px;
+  top: -10px;
+  right: 4px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid gray;
+}
+
+.note::after {
+  content: "";
+  position: absolute;
+  top: -9px;
   right: 5px;
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 8px solid rgb(235, 235, 235);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid rgb(241, 241, 241);
 }
 
 .video_display {

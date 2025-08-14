@@ -1,4 +1,3 @@
-import { video_metadata } from "@/generated/prisma";
 import { BallotEntryField, Flag } from "./types";
 import { client_labels, labels } from "./labels";
 
@@ -6,7 +5,7 @@ import { client_labels, labels } from "./labels";
  * Server side checks of video metadata to determine eligibility
  * @returns A list of flags for any that may apply to the video
  */
-export function video_check(video_metadata: video_metadata): Flag[] {
+export function video_check(video_metadata: { upload_date: Date, duration: number | null, uploader: string }): Flag[] {
     const flags: Flag[] = []
 
     const now = new Date(Date.now())
@@ -31,13 +30,12 @@ export function video_check(video_metadata: video_metadata): Flag[] {
         flags.push(labels.wrong_period)
     // My gosh im gonna kms if i need to work with date times again
 
-    if (!video_metadata.duration)
-        video_metadata.duration = 32
-    
-    if (video_metadata.duration < 30)
-        flags.push(labels.too_short)
-    else if (video_metadata.duration <= 45)
-        flags.push(labels.maybe_too_short)
+    if (video_metadata.duration !== null) {
+        if (video_metadata.duration < 30)
+            flags.push(labels.too_short)
+        else if (video_metadata.duration <= 45)
+            flags.push(labels.maybe_too_short)
+    }
 
     if (video_metadata.uploader === "LittleshyFiM")
         flags.push(labels.littleshy_vid)

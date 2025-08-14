@@ -57,11 +57,4 @@ export type YTDLPItems = {
     duration: number | undefined
 }
 
-export type VideoPoolItem = {
-    id: string
-    title: string
-    thumbnail: string
-    platform: string
-    uploader: string
-    votes: number
-}
+export type VideoPoolItem = Omit<video_metadata, "upload_date"> & { votes: number, flags: Flag[], upload_date: string }
